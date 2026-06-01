@@ -1,0 +1,119 @@
+<template>
+    <lightning-card title={processName} icon-name="utility:flow">
+
+        <!-- Process Selection -->
+        <template if:true={showProcessList}>
+            <div class="slds-m-around_medium">
+                <p class="slds-text-heading_small slds-m-bottom_small">Select a process to run:</p>
+                <template for:each={activeProcesses} for:item="proc">
+                    <div key={proc.Id} class="slds-box slds-m-bottom_small slds-p-around_small" onclick={selectProcess} data-process-id={proc.Id} style="cursor:pointer">
+                        <p class="slds-text-title">{proc.Name}</p>
+                        <p class="slds-text-body_small">{proc.Description__c}</p>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Step Execution -->
+        <template if:true={showExecution}>
+            <div class="slds-m-around_medium">
+                <!-- Progress Bar -->
+                <div class="slds-m-bottom_medium">
+                    <p class="slds-text-body_small">Stage {currentStageIndex} of {totalStages}: <strong>{currentStageName}</strong></p>
+                    <div class="slds-progress-bar" role="progressbar">
+                        <span class="slds-progress-bar__value" style={progressBarStyle}></span>
+                    </div>
+                    <p class="slds-text-body_small slds-m-top_xx-small">Step {currentStepIndex} of {totalSteps}: <strong>{currentStepName}</strong></p>
+                </div>
+
+                <!-- Step Error Banner -->
+                <template if:true={stepError}>
+                    <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                        <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        <h2><strong>Error on step "{currentStepName}":</strong> {stepError}</h2>
+                        <div class="slds-notify__close">
+                            <lightning-button-icon icon-name="utility:close" size="small" onclick={clearError} alternative-text="Close"></lightning-button-icon>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Dynamic Form Fields -->
+                <template for:each={currentFields} for:item="field">
+                    <div key={field.apiName} class="slds-m-bottom_small">
+                        <template if:true={field.isPicklist}>
+                            <lightning-combobox label={field.label} value={field.value} options={field.picklistOptions} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-combobox>
+                        </template>
+                        <template if:true={field.isDate}>
+                            <lightning-input type="date" label={field.label} value={field.value} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-input>
+                        </template>
+                        <template if:true={field.isDateTime}>
+                            <lightning-input type="datetime" label={field.label} value={field.value} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-input>
+                        </template>
+                        <template if:true={field.isCheckbox}>
+                            <lightning-input type="checkbox" label={field.label} checked={field.value} data-field-api={field.apiName} onchange={handleCheckboxChange}></lightning-input>
+                        </template>
+                        <template if:true={field.isNumber}>
+                            <lightning-input type="number" label={field.label} value={field.value} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-input>
+                        </template>
+                        <template if:true={field.isTextarea}>
+                            <lightning-textarea label={field.label} value={field.value} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-textarea>
+                        </template>
+                        <template if:true={field.isText}>
+                            <lightning-input type={field.inputType} label={field.label} value={field.value} required={field.required} data-field-api={field.apiName} onchange={handleFieldChange}></lightning-input>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Notification preview -->
+                <template if:true={isNotificationStep}>
+                    <div class="slds-box slds-theme_shade slds-m-vertical_small">
+                        <p class="slds-text-title_caps">Notification Message</p>
+                        <p>{currentNotificationMessage}</p>
+                    </div>
+                </template>
+            </div>
+
+            <div slot="footer" class="slds-m-around_small">
+                <template if:true={isExecuting}>
+                    <lightning-spinner alternative-text="Processing..." size="small" class="slds-m-right_small"></lightning-spinner>
+                    <span class="slds-text-body_small slds-text-color_weak">Processing...</span>
+                </template>
+                <template if:false={isExecuting}>
+                    <lightning-button label="Back" onclick={goBackStep} disabled={isFirstStep} class="slds-m-right_small"></lightning-button>
+                    <template if:false={isLastStep}>
+                        <lightning-button variant="brand" label="Next" onclick={goNextStep}></lightning-button>
+                    </template>
+                    <template if:true={isLastStep}>
+                        <lightning-button variant="brand" label="Finish" onclick={finishProcess}></lightning-button>
+                    </template>
+                </template>
+            </div>
+        </template>
+
+        <!-- Success Screen -->
+        <template if:true={showSuccess}>
+            <div class="slds-m-around_medium slds-text-align_center">
+                <lightning-icon icon-name="utility:success" size="large" variant="success"></lightning-icon>
+                <h2 class="slds-text-heading_medium slds-m-top_medium slds-m-bottom_medium">Process completed!</h2>
+
+                <!-- Created records links -->
+                <template if:true={hasCreatedRecords}>
+                    <div class="slds-box slds-text-align_left slds-m-bottom_medium">
+                        <p class="slds-text-title_caps slds-m-bottom_small">Records created — do you want to navigate to any of them?</p>
+                        <template for:each={createdRecords} for:item="rec">
+                            <div key={rec.id} class="slds-m-bottom_x-small">
+                                <a href="javascript:void(0)" data-record-id={rec.id} onclick={navigateToRecord}>
+                                    <lightning-icon icon-name="utility:record" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                                    {rec.label}
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <lightning-button label="Run Again" onclick={resetRunner}></lightning-button>
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

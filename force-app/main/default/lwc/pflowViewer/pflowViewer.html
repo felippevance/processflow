@@ -1,0 +1,68 @@
+<template>
+    <lightning-card icon-name="utility:flow">
+        <span slot="title">
+            {processName}
+            <template if:true={processVersion}>
+                &nbsp;<lightning-badge label={versionLabel}></lightning-badge>
+            </template>
+        </span>
+
+        <!-- Loading -->
+        <template if:true={isLoading}>
+            <div class="slds-m-around_medium slds-text-align_center">
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <!-- Not configured -->
+        <template if:true={showEmpty}>
+            <div class="slds-m-around_medium slds-text-align_center">
+                <p class="slds-text-color_weak">No process selected. Set a Process ID in the component properties.</p>
+            </div>
+        </template>
+
+        <!-- Process description -->
+        <template if:true={showContent}>
+            <template if:true={processDescription}>
+                <p class="slds-m-around_small slds-text-body_small slds-text-color_weak">{processDescription}</p>
+            </template>
+
+            <!-- Stages as columns -->
+            <div class="slds-m-around_medium slds-grid slds-wrap slds-gutters">
+                <template for:each={stagesWithSteps} for:item="stage">
+                    <div key={stage.stage.Id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_medium">
+                        <div class="slds-box slds-box_small" style="border-top: 3px solid #0176D3;">
+                            <!-- Stage header -->
+                            <div class="slds-media slds-media_center slds-m-bottom_small">
+                                <div class="slds-media__figure">
+                                    <lightning-icon icon-name="utility:steps" size="x-small"></lightning-icon>
+                                </div>
+                                <div class="slds-media__body">
+                                    <p class="slds-text-title_caps slds-text-color_default">{stage.stage.Name}</p>
+                                </div>
+                            </div>
+
+                            <!-- Steps -->
+                            <template for:each={stage.steps} for:item="step">
+                                <div key={step.Id} class="slds-m-bottom_x-small slds-p-around_x-small" style="background:#f3f3f3; border-radius:4px;">
+                                    <div class="slds-grid slds-grid_vertical-align-center">
+                                        <lightning-icon icon-name={step.typeIcon} size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <p class="slds-text-body_small slds-text-color_default"><strong>{step.Name}</strong></p>
+                                    </div>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">{step.typeLabel}</p>
+                                    <template if:true={step.targetObjectName}>
+                                        <p class="slds-text-body_small slds-text-color_weak">Object: {step.targetObjectName}</p>
+                                    </template>
+                                    <template if:true={step.fieldCount}>
+                                        <p class="slds-text-body_small slds-text-color_weak">{step.fieldCount} field(s)</p>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

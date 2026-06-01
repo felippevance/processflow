@@ -1,0 +1,25 @@
+<template>
+    <lightning-card title="Execution History" icon-name="utility:event_ext">
+        <template if:true={isLoading}>
+            <div class="slds-m-around_medium slds-text-align_center">
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <template if:true={hasLogs}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={logs}
+                    columns={columns}
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </template>
+            <template if:false={hasLogs}>
+                <div class="slds-m-around_medium slds-text-align_center">
+                    <p class="slds-text-color_weak">No execution history yet.</p>
+                </div>
+            </template>
+        </template>
+    </lightning-card>
+</template>

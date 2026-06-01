@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AppPage">
+            <property name="processId" type="String" label="Process ID" description="Deprecated — use the component on a Process__c Record Page instead." />
+        </targetConfig>
+        <targetConfig targets="lightning__RecordPage">
+            <property name="processId" type="String" label="Process ID" description="Deprecated — recordId is used automatically from the page context." />
+            <objects>
+                <object>Process__c</object>
+            </objects>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

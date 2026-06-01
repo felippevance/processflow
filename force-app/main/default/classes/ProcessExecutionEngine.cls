@@ -1,0 +1,159 @@
+public with sharing class ProcessExecutionEngine {
+
+    public class StepResult {
+        @AuraEnabled public String createdRecordId   { get; set; }
+        @AuraEnabled public String createdObjectType { get; set; }
+    }
+
+    // Called from test/anonymous Apex — queries step from DB
+    public static StepResult execute(Id stepId, Map<String, Object> inputData, Id executionId) {
+        Step__c step = [
+            SELECT Id, Type__c, TargetObject__c, FieldsConfig__c
+            FROM Step__c WHERE Id = :stepId WITH SECURITY_ENFORCED
+        ];
+        return executeWithData(stepId, step.Type__c, step.TargetObject__c, step.FieldsConfig__c, inputData, executionId);
+    }
+
+    // Called from LWC via controller — step data already in memory, no extra query
+    public static StepResult executeWithData(
+        Id stepId, String stepType, String targetObject, String fieldsConfig,
+        Map<String, Object> inputData, Id executionId
+    ) {
+        StepResult result = new StepResult();
+
+        switch on stepType {
+            when 'Create Record' {
+                Id createdId = createRecord(targetObject, fieldsConfig, inputData);
+                result.createdRecordId   = createdId;
+                result.createdObjectType = targetObject;
+            }
+            when 'Update Record' {
+                updateRecord(targetObject, fieldsConfig, inputData);
+            }
+            when 'Notification' {
+                sendNotification(fieldsConfig, inputData);
+            }
+        }
+
+        Boolean isLastStep = inputData.containsKey('isLastStep') && (Boolean) inputData.get('isLastStep');
+
+        if (isLastStep) {
+            delete new Execution__c(Id = executionId);
+        } else {
+            Execution__c exec = new Execution__c(
+                Id = executionId,
+                CurrentStep__c = stepId,
+                ExecutionData__c = JSON.serialize(inputData)
+            );
+            update exec;
+        }
+
+        return result;
+    }
+
+    private static Schema.SObjectType resolveObjectType(String objectApiName) {
+        if (String.isBlank(objectApiName)) throw new AuraHandledException('Target object not specified.');
+        Schema.SObjectType objType = Schema.getGlobalDescribe().get(objectApiName);
+        if (objType == null) throw new AuraHandledException('Object not found: ' + objectApiName);
+        Schema.DescribeSObjectResult describeResult = objType.getDescribe();
+        if (!describeResult.isAccessible()) throw new AuraHandledException('Insufficient access to object: ' + objectApiName);
+        return objType;
+    }
+
+    private static Id createRecord(String objectApiName, String fieldsConfig, Map<String, Object> inputData) {
+        Schema.SObjectType objType = resolveObjectType(objectApiName);
+        if (!objType.getDescribe().isCreateable()) throw new AuraHandledException('Cannot create records on: ' + objectApiName);
+
+        SObject newRecord = objType.newSObject();
+
+        // Parse fieldsConfig — support both old array format and new {recordTypeId, fields} format
+        Object parsed = JSON.deserializeUntyped(fieldsConfig);
+        List<Object> fieldDefs;
+        String recordTypeId = null;
+
+        if (parsed instanceof List<Object>) {
+            // Old format: flat array
+            fieldDefs = (List<Object>) parsed;
+        } else {
+            // New format: {recordTypeId, fields}
+            Map<String, Object> cfg = (Map<String, Object>) parsed;
+            recordTypeId = (String) cfg.get('recordTypeId');
+            fieldDefs = cfg.get('fields') != null ? (List<Object>) cfg.get('fields') : new List<Object>();
+        }
+
+        if (String.isNotBlank(recordTypeId)) {
+            newRecord.put('RecordTypeId', (Id) recordTypeId);
+        }
+
+        for (Object fc : fieldDefs) {
+            Map<String, Object> fieldDef = (Map<String, Object>) fc;
+            String apiName   = (String) fieldDef.get('apiName');
+            String fieldType = (String) fieldDef.get('type');
+            if (inputData.containsKey(apiName) && inputData.get(apiName) != null) {
+                newRecord.put(apiName, coerceValue(inputData.get(apiName), fieldType));
+            }
+        }
+
+        // Strip fields the running user cannot write
+        SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, new List<SObject>{ newRecord });
+        List<SObject> stripped = decision.getRecords();
+        insert stripped[0];
+        return stripped[0].Id;
+    }
+
+    private static void updateRecord(String objectApiName, String fieldsConfig, Map<String, Object> inputData) {
+        if (!inputData.containsKey('recordId')) return;
+
+        Id recordId = (Id) inputData.get('recordId');
+        Schema.SObjectType objType = resolveObjectType(objectApiName);
+        if (!objType.getDescribe().isUpdateable()) throw new AuraHandledException('Cannot update records on: ' + objectApiName);
+
+        SObject record = objType.newSObject(recordId);
+
+        Object parsed = JSON.deserializeUntyped(fieldsConfig);
+        List<Object> fieldDefs = parsed instanceof List<Object>
+            ? (List<Object>) parsed
+            : (List<Object>) ((Map<String, Object>) parsed).get('fields');
+        if (fieldDefs == null) fieldDefs = new List<Object>();
+
+        for (Object fc : fieldDefs) {
+            Map<String, Object> fieldDef = (Map<String, Object>) fc;
+            String apiName   = (String) fieldDef.get('apiName');
+            String fieldType = (String) fieldDef.get('type');
+            if (inputData.containsKey(apiName) && inputData.get(apiName) != null) {
+                record.put(apiName, coerceValue(inputData.get(apiName), fieldType));
+            }
+        }
+
+        // Strip fields the running user cannot update
+        SObjectAccessDecision decision = Security.stripInaccessible(AccessType.UPDATABLE, new List<SObject>{ record });
+        update decision.getRecords()[0];
+    }
+
+    private static void sendNotification(String fieldsConfig, Map<String, Object> inputData) {
+        Map<String, Object> config = (Map<String, Object>) JSON.deserializeUntyped(fieldsConfig);
+        String message = String.escapeSingleQuotes((String) config.get('messageTemplate'));
+        Id recipientId = inputData.containsKey('recipientId')
+            ? (Id) inputData.get('recipientId')
+            : UserInfo.getUserId();
+        ConnectApi.ChatterFeeds.postFeedElement(null, recipientId, ConnectApi.FeedElementType.FeedItem, message);
+    }
+
+    private static Object coerceValue(Object value, String fieldType) {
+        if (value == null) return null;
+        String strVal = String.valueOf(value).trim();
+        if (String.isBlank(strVal)) return null;
+        String t = (fieldType == null ? 'STRING' : fieldType.toUpperCase());
+        try {
+            if (t == 'DATE')                                         return Date.valueOf(strVal);
+            if (t == 'DATETIME')                                     return DateTime.valueOf(strVal.replace('T', ' '));
+            if (t == 'BOOLEAN')                                      return Boolean.valueOf(strVal);
+            if (t == 'INTEGER')                                      return Integer.valueOf(strVal);
+            if (t == 'DOUBLE' || t == 'CURRENCY' || t == 'PERCENT') return Decimal.valueOf(strVal);
+            if (t == 'LONG')                                         return Long.valueOf(strVal);
+        } catch (Exception e) {
+            return strVal;
+        }
+        return strVal;
+    }
+}

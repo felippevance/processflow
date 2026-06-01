@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Process__c</fullName>
+    <label>Process</label>
+    <type>Lookup</type>
+    <referenceTo>Process__c</referenceTo>
+    <relationshipLabel>Executions</relationshipLabel>
+    <relationshipName>Executions</relationshipName>
+</CustomField>

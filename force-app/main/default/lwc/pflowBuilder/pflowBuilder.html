@@ -1,0 +1,103 @@
+<template>
+    <lightning-card title="Process Builder" icon-name="utility:flow">
+        <!-- Progress Indicator -->
+        <div class="slds-progress slds-m-around_medium">
+            <ol class="slds-progress__list">
+                <li class={stepClass1}><span>Process</span></li>
+                <li class={stepClass2}><span>Stages</span></li>
+                <li class={stepClass3}><span>Steps</span></li>
+                <li class={stepClass4}><span>Review</span></li>
+            </ol>
+        </div>
+
+        <!-- Screen 1: Process -->
+        <template if:true={isScreen1}>
+            <div class="slds-m-around_medium">
+                <lightning-input label="Process Name" value={processName} onchange={handleProcessName} required></lightning-input>
+                <lightning-textarea label="Description" value={processDescription} onchange={handleProcessDescription}></lightning-textarea>
+                <lightning-input type="checkbox" label="Active" checked={processIsActive} onchange={handleProcessActive}></lightning-input>
+            </div>
+        </template>
+
+        <!-- Screen 2: Stages -->
+        <template if:true={isScreen2}>
+            <div class="slds-m-around_medium">
+                <template for:each={stages} for:item="stage" for:index="idx">
+                    <div key={stage.id} class="slds-box slds-m-bottom_small">
+                        <lightning-input label="Stage Name" value={stage.name} data-idx={idx} onchange={handleStageName}></lightning-input>
+                        <lightning-button-icon icon-name="utility:delete" data-idx={idx} onclick={removeStage} alternative-text="Remove"></lightning-button-icon>
+                    </div>
+                </template>
+                <lightning-button label="Add Stage" onclick={addStage} icon-name="utility:add"></lightning-button>
+            </div>
+        </template>
+
+        <!-- Screen 3: Steps per Stage -->
+        <template if:true={isScreen3}>
+            <div class="slds-m-around_medium">
+                <template for:each={stages} for:item="stage" for:index="stageIdx">
+                    <div key={stage.id} class="slds-section slds-is-open slds-m-bottom_medium">
+                        <h3 class="slds-section__title slds-theme_shade slds-p-around_x-small">{stage.name}</h3>
+                        <template for:each={stage.steps} for:item="step" for:index="stepIdx">
+                            <div key={step.id} class="slds-box slds-m-vertical_small">
+                                <lightning-input label="Step Name" value={step.name} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepName}></lightning-input>
+                                <lightning-combobox label="Type" value={step.type} options={stepTypeOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepType}></lightning-combobox>
+                                <template if:true={step.showObjectPicker}>
+                                    <lightning-input label="Target Object API Name (e.g. Case)" value={step.targetObject} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleTargetObject}></lightning-input>
+                                    <template if:true={step.hasFieldOptions}>
+                                        <p class="slds-text-title_caps slds-m-top_small">Select Fields to Expose</p>
+                                        <template for:each={step.fieldOptions} for:item="field">
+                                            <lightning-input key={field.apiName} type="checkbox" label={field.label} checked={field.required} data-field-api={field.apiName} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleFieldToggle}></lightning-input>
+                                        </template>
+                                    </template>
+                                    <lightning-button label="Load Fields" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={loadFields}></lightning-button>
+                                    <template if:true={step.hasRecordTypes}>
+                                        <lightning-combobox
+                                            label="Record Type"
+                                            value={step.recordTypeId}
+                                            options={step.recordTypeOptions}
+                                            placeholder="-- Default --"
+                                            data-stage-idx={stageIdx}
+                                            data-step-idx={stepIdx}
+                                            onchange={handleRecordType}>
+                                        </lightning-combobox>
+                                    </template>
+                                </template>
+                                <template if:true={step.showNotificationConfig}>
+                                    <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate}></lightning-textarea>
+                                </template>
+                            </div>
+                        </template>
+                        <lightning-button label="Add Step" data-stage-idx={stageIdx} onclick={addStep} icon-name="utility:add"></lightning-button>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Screen 4: Review -->
+        <template if:true={isScreen4}>
+            <div class="slds-m-around_medium">
+                <h2 class="slds-text-heading_medium">Review: {processName}</h2>
+                <template for:each={stages} for:item="stage">
+                    <div key={stage.id} class="slds-box slds-m-vertical_small">
+                        <p class="slds-text-title_caps">{stage.name}</p>
+                        <template for:each={stage.steps} for:item="step">
+                            <p key={step.id} class="slds-m-left_medium">— {step.name} ({step.type})</p>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Navigation Buttons -->
+        <div slot="footer" class="slds-m-around_small">
+            <lightning-button label="Back" onclick={goBack} disabled={isScreen1} class="slds-m-right_small"></lightning-button>
+            <template if:false={isScreen4}>
+                <lightning-button variant="brand" label="Next" onclick={goNext}></lightning-button>
+            </template>
+            <template if:true={isScreen4}>
+                <lightning-button variant="brand" label="Save Process" onclick={saveProcess} disabled={isSaving}></lightning-button>
+            </template>
+        </div>
+    </lightning-card>
+</template>

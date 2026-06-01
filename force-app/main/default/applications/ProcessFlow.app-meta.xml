@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <defaultLandingTab>Process__c</defaultLandingTab>
+    <description>Process Flow — Build and run internal business processes</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <label>Process Flow</label>
+    <navType>Console</navType>
+    <tabs>Process__c</tabs>
+    <tabs>Stage__c</tabs>
+    <tabs>Step__c</tabs>
+    <tabs>Execution__c</tabs>
+    <uiType>Lightning</uiType>
+    <workspaceConfig>
+        <mappings>
+            <tab>Process__c</tab>
+        </mappings>
+        <mappings>
+            <tab>Stage__c</tab>
+        </mappings>
+        <mappings>
+            <tab>Step__c</tab>
+        </mappings>
+        <mappings>
+            <tab>Execution__c</tab>
+        </mappings>
+    </workspaceConfig>
+</CustomApplication>

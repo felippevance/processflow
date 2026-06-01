@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CurrentStage__c</fullName>
+    <label>Current Stage</label>
+    <type>Lookup</type>
+    <referenceTo>Stage__c</referenceTo>
+    <relationshipLabel>Current Executions</relationshipLabel>
+    <relationshipName>CurrentExecutions</relationshipName>
+</CustomField>
