@@ -18,6 +18,23 @@ export default class PflowBuilder extends LightningElement {
         { label: 'Notification',  value: 'Notification'  }
     ];
 
+    conditionLogicOptions = [
+        { label: 'AND — all conditions must match', value: 'AND' },
+        { label: 'OR — any condition must match',   value: 'OR'  }
+    ];
+
+    conditionSourceOptions = [
+        { label: 'Field value (entered by user)', value: 'fieldValue'    },
+        { label: 'Created record field',          value: 'createdRecord' }
+    ];
+
+    conditionOperatorOptions = [
+        { label: 'equals',        value: 'equals'       },
+        { label: 'not equals',    value: 'not_equals'   },
+        { label: 'is empty',      value: 'is_empty'     },
+        { label: 'is not empty',  value: 'is_not_empty' }
+    ];
+
     get isScreen1() { return this.currentScreen === 1; }
     get isScreen2() { return this.currentScreen === 2; }
     get isScreen3() { return this.currentScreen === 3; }
@@ -33,7 +50,15 @@ export default class PflowBuilder extends LightningElement {
     handleProcessActive(e)      { this.processIsActive = e.target.checked; }
 
     addStage() {
-        this.stages = [...this.stages, { id: Date.now(), name: '', sequence: this.stages.length + 1, steps: [] }];
+        this.stages = [...this.stages, {
+            id: Date.now(),
+            name: '',
+            sequence: this.stages.length + 1,
+            steps: [],
+            conditionLogic: 'AND',
+            conditions: [],
+            showConditions: false
+        }];
     }
     removeStage(e) {
         const idx = parseInt(e.currentTarget.dataset.idx, 10);
@@ -42,6 +67,87 @@ export default class PflowBuilder extends LightningElement {
     handleStageName(e) {
         const idx = parseInt(e.currentTarget.dataset.idx, 10);
         this.stages = this.stages.map((s, i) => i === idx ? { ...s, name: e.target.value } : s);
+    }
+
+    toggleConditions(e) {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : { ...s, showConditions: !s.showConditions });
+    }
+
+    handleConditionLogic(e) {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : { ...s, conditionLogic: e.detail.value });
+    }
+
+    addCondition(e) {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s,
+            conditions: [...s.conditions, {
+                id: Date.now(),
+                source: 'fieldValue',
+                field: '',
+                stepName: '',
+                operator: 'equals',
+                value: '',
+                isCreatedRecord: false,
+                isEmptyOperator: false
+            }]
+        });
+    }
+
+    removeCondition(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.filter((_, ci) => ci !== condIdx)
+        });
+    }
+
+    handleConditionSource(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        const src = e.detail.value;
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.map((c, ci) => ci !== condIdx ? c : {
+                ...c, source: src, isCreatedRecord: src === 'createdRecord'
+            })
+        });
+    }
+
+    handleConditionField(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.map((c, ci) => ci !== condIdx ? c : { ...c, field: e.target.value })
+        });
+    }
+
+    handleConditionStepName(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.map((c, ci) => ci !== condIdx ? c : { ...c, stepName: e.target.value })
+        });
+    }
+
+    handleConditionOperator(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        const op = e.detail.value;
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.map((c, ci) => ci !== condIdx ? c : {
+                ...c, operator: op, isEmptyOperator: op === 'is_empty' || op === 'is_not_empty'
+            })
+        });
+    }
+
+    handleConditionValue(e) {
+        const idx     = parseInt(e.currentTarget.dataset.idx, 10);
+        const condIdx = parseInt(e.currentTarget.dataset.condIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== idx ? s : {
+            ...s, conditions: s.conditions.map((c, ci) => ci !== condIdx ? c : { ...c, value: e.target.value })
+        });
     }
 
     addStep(e) {
@@ -147,6 +253,16 @@ export default class PflowBuilder extends LightningElement {
                 stages: this.stages.map(s => ({
                     name: s.name,
                     sequence: s.sequence,
+                    conditionLogic: s.conditionLogic || 'AND',
+                    conditionsConfig: s.conditions && s.conditions.length > 0
+                        ? JSON.stringify(s.conditions.map(c => ({
+                            source:   c.source,
+                            field:    c.field   || '',
+                            stepName: c.stepName || '',
+                            operator: c.operator,
+                            value:    c.value   || ''
+                          })))
+                        : null,
                     steps: s.steps.map(st => ({
                         name: st.name,
                         sequence: st.sequence,

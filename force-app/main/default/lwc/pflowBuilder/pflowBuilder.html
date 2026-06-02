@@ -24,8 +24,117 @@
             <div class="slds-m-around_medium">
                 <template for:each={stages} for:item="stage" for:index="idx">
                     <div key={stage.id} class="slds-box slds-m-bottom_small">
-                        <lightning-input label="Stage Name" value={stage.name} data-idx={idx} onchange={handleStageName}></lightning-input>
-                        <lightning-button-icon icon-name="utility:delete" data-idx={idx} onclick={removeStage} alternative-text="Remove"></lightning-button-icon>
+                        <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small">
+                            <lightning-input
+                                label="Stage Name"
+                                value={stage.name}
+                                data-idx={idx}
+                                onchange={handleStageName}
+                                class="slds-col">
+                            </lightning-input>
+                            <lightning-button-icon
+                                icon-name="utility:filterList"
+                                variant="border"
+                                alternative-text="Conditions"
+                                title="Add/Edit Conditions"
+                                data-idx={idx}
+                                onclick={toggleConditions}
+                                class="slds-m-left_small">
+                            </lightning-button-icon>
+                            <lightning-button-icon
+                                icon-name="utility:delete"
+                                data-idx={idx}
+                                onclick={removeStage}
+                                alternative-text="Remove"
+                                class="slds-m-left_x-small">
+                            </lightning-button-icon>
+                        </div>
+
+                        <!-- Conditions Panel -->
+                        <template if:true={stage.showConditions}>
+                            <div class="slds-box slds-theme_shade slds-m-top_small">
+                                <p class="slds-text-title_caps slds-m-bottom_small">Stage Conditions</p>
+                                <lightning-combobox
+                                    label="Condition Logic"
+                                    value={stage.conditionLogic}
+                                    options={conditionLogicOptions}
+                                    data-idx={idx}
+                                    onchange={handleConditionLogic}>
+                                </lightning-combobox>
+                                <template for:each={stage.conditions} for:item="cond" for:index="condIdx">
+                                    <div key={cond.id} class="slds-grid slds-grid_vertical-align-end slds-m-top_x-small slds-gutters_x-small">
+                                        <div class="slds-col slds-size_2-of-12">
+                                            <lightning-combobox
+                                                label="Source"
+                                                value={cond.source}
+                                                options={conditionSourceOptions}
+                                                data-idx={idx}
+                                                data-cond-idx={condIdx}
+                                                onchange={handleConditionSource}>
+                                            </lightning-combobox>
+                                        </div>
+                                        <template if:true={cond.isCreatedRecord}>
+                                            <div class="slds-col slds-size_2-of-12">
+                                                <lightning-input
+                                                    label="Step Name"
+                                                    value={cond.stepName}
+                                                    data-idx={idx}
+                                                    data-cond-idx={condIdx}
+                                                    onchange={handleConditionStepName}>
+                                                </lightning-input>
+                                            </div>
+                                        </template>
+                                        <div class="slds-col slds-size_3-of-12">
+                                            <lightning-input
+                                                label="Field API Name"
+                                                value={cond.field}
+                                                data-idx={idx}
+                                                data-cond-idx={condIdx}
+                                                onchange={handleConditionField}>
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-12">
+                                            <lightning-combobox
+                                                label="Operator"
+                                                value={cond.operator}
+                                                options={conditionOperatorOptions}
+                                                data-idx={idx}
+                                                data-cond-idx={condIdx}
+                                                onchange={handleConditionOperator}>
+                                            </lightning-combobox>
+                                        </div>
+                                        <template if:false={cond.isEmptyOperator}>
+                                            <div class="slds-col slds-size_2-of-12">
+                                                <lightning-input
+                                                    label="Value"
+                                                    value={cond.value}
+                                                    data-idx={idx}
+                                                    data-cond-idx={condIdx}
+                                                    onchange={handleConditionValue}>
+                                                </lightning-input>
+                                            </div>
+                                        </template>
+                                        <div class="slds-col slds-size_1-of-12">
+                                            <lightning-button-icon
+                                                icon-name="utility:delete"
+                                                size="small"
+                                                data-idx={idx}
+                                                data-cond-idx={condIdx}
+                                                onclick={removeCondition}
+                                                alternative-text="Remove condition">
+                                            </lightning-button-icon>
+                                        </div>
+                                    </div>
+                                </template>
+                                <lightning-button
+                                    label="Add Condition"
+                                    icon-name="utility:add"
+                                    data-idx={idx}
+                                    onclick={addCondition}
+                                    class="slds-m-top_small">
+                                </lightning-button>
+                            </div>
+                        </template>
                     </div>
                 </template>
                 <lightning-button label="Add Stage" onclick={addStage} icon-name="utility:add"></lightning-button>
