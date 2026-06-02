@@ -31,6 +31,10 @@
     <types>
         <members>ConditionEvaluator</members>
         <members>ConditionEvaluatorTest</members>
+        <members>HttpCalloutMock</members>
+        <members>HttpMockCallout</members>
+        <members>HttpRequestExecutor</members>
+        <members>HttpRequestExecutorTest</members>
         <members>ProcessBuilderController</members>
         <members>ProcessBuilderControllerTest</members>
         <members>ProcessExecutionEngine</members>

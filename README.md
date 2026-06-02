@@ -25,6 +25,7 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 - **Dynamic Field Picker** — loads fields from any Salesforce object via metadata API; filters out system fields automatically
 - **Record Type Support** — select the record type for each Create/Update step
 - **Conditional Branching** — configure conditions on each stage so the Runner automatically skips stages whose conditions are not met, enabling dynamic process paths based on user input or records created during the process
+- **HTTP/REST Step Type** — configure REST API calls via Named Credentials with field-to-JSON body mapping, response mapping back into process data, retry flag for middleware, and configurable failure behavior (stop or continue)
 - **Process Versioning** — create new versions of a process while existing executions continue running on the previous version
 - **Process Viewer** — read-only visualization of any process flow, including conditions per stage
 
@@ -51,6 +52,7 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 | **Create Record** | Creates a new record on any accessible Salesforce object with user-provided field values |
 | **Update Record** | Updates an existing record; user provides the record ID and fields to change |
 | **Notification** | Posts a Chatter message to a specified recipient with a configurable template |
+| **HTTP Request** | Calls an external REST API via Named Credential; maps process field values to the request body and maps response fields back into the process context |
 
 ---
 
@@ -334,7 +336,7 @@ Importing to target org...
 
 - [x] Conditional branching — skip stages based on field values or record state
 - [ ] Approval step type — native Salesforce approval process integration
-- [ ] HTTP/REST step type — call external APIs pre-configured by admins
+- [x] HTTP/REST step type — call external APIs pre-configured by admins
 - [ ] Rollback on failure — undo previously created records if a step fails
 - [ ] Execution history UI — replay or re-run failed processes
 - [ ] AppExchange packaging — managed package with `pflow` namespace
