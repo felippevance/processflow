@@ -82,7 +82,8 @@ public with sharing class ProcessRunnerController {
     @AuraEnabled
     public static List<StageWithSteps> getProcessSteps(Id processId) {
         List<Stage__c> stages = [
-            SELECT Id, Name, Sequence__c, Process__r.Name
+            SELECT Id, Name, Sequence__c, Process__r.Name,
+                   ConditionLogic__c, ConditionsConfig__c
             FROM Stage__c
             WHERE Process__c = :processId
             WITH SECURITY_ENFORCED
@@ -117,6 +118,68 @@ public with sharing class ProcessRunnerController {
             result.add(sws);
         }
         return result;
+    }
+
+    public class NextStageResult {
+        @AuraEnabled public Stage__c stage          { get; set; }
+        @AuraEnabled public List<Step__c> steps     { get; set; }
+        @AuraEnabled public Boolean processComplete { get; set; }
+    }
+
+    @AuraEnabled
+    public static NextStageResult getNextStage(Id executionId, Id currentStageId) {
+        Execution__c exec = [
+            SELECT Id, Process__c, ExecutionData__c
+            FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED
+        ];
+
+        Decimal currentSeq = [
+            SELECT Sequence__c FROM Stage__c WHERE Id = :currentStageId WITH SECURITY_ENFORCED
+        ].Sequence__c;
+
+        List<Stage__c> remainingStages = [
+            SELECT Id, Name, Sequence__c, ConditionLogic__c, ConditionsConfig__c
+            FROM Stage__c
+            WHERE Process__c = :exec.Process__c
+              AND Sequence__c > :currentSeq
+            WITH SECURITY_ENFORCED
+            ORDER BY Sequence__c ASC
+        ];
+
+        String execData = exec.ExecutionData__c;
+
+        for (Stage__c candidate : remainingStages) {
+            Boolean passes = ConditionEvaluator.evaluate(
+                candidate.ConditionsConfig__c,
+                candidate.ConditionLogic__c,
+                execData
+            );
+            if (passes) {
+                List<Step__c> steps = [
+                    SELECT Id, Name, Sequence__c, Stage__c,
+                           Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c
+                    FROM Step__c
+                    WHERE Stage__c = :candidate.Id
+                    WITH SECURITY_ENFORCED
+                    ORDER BY Sequence__c ASC
+                ];
+                exec.CurrentStage__c = candidate.Id;
+                exec.CurrentStep__c  = steps.isEmpty() ? null : steps[0].Id;
+                update exec;
+
+                NextStageResult res = new NextStageResult();
+                res.stage           = candidate;
+                res.steps           = steps;
+                res.processComplete = false;
+                return res;
+            }
+        }
+
+        // No more stages pass — process complete, delete execution
+        delete exec;
+        NextStageResult res = new NextStageResult();
+        res.processComplete = true;
+        return res;
     }
 
     @AuraEnabled
