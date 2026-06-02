@@ -61,12 +61,37 @@ public with sharing class HttpRequestExecutor {
         }
 
         Http http = new Http();
-        HttpResponse res;
-        try {
-            res = http.send(req);
-        } catch (Exception e) {
+        Integer retryCount = (retry && config.containsKey('retryCount'))
+            ? Integer.valueOf(config.get('retryCount'))
+            : 0;
+        Integer maxAttempts = 1 + retryCount; // 1 initial + N retries
+
+        HttpResponse res = null;
+        String lastError = null;
+
+        for (Integer attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                res = http.send(req);
+                Integer sc = res.getStatusCode();
+                // Stop retrying on success or client error (4xx) — only retry on 5xx/network
+                if (sc < 500) break;
+                lastError = 'HTTP ' + sc + ': ' + res.getBody()?.left(200);
+                if (attempt < maxAttempts) {
+                    System.debug('HTTP retry ' + attempt + '/' + retryCount + ' after status ' + sc);
+                }
+            } catch (Exception e) {
+                lastError = e.getMessage();
+                res = null;
+                if (attempt < maxAttempts) {
+                    System.debug('HTTP retry ' + attempt + '/' + retryCount + ' after error: ' + lastError);
+                }
+            }
+        }
+
+        // Handle final failure
+        if (res == null) {
             if (onFailure == 'continue') return new Map<String, Object>();
-            throw new AuraHandledException('HTTP callout failed: ' + e.getMessage());
+            throw new AuraHandledException('HTTP callout failed after ' + maxAttempts + ' attempt(s): ' + lastError);
         }
 
         Integer statusCode = res.getStatusCode();

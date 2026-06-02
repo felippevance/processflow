@@ -548,8 +548,9 @@ export default class PflowBuilder extends LightningElement {
                                     bodyMappings:     st.httpBodyMappings.map(m => ({ jsonKey: m.jsonKey, processField: m.processField })),
                                     responseMappings: st.httpResponseMappings.map(m => ({ jsonPath: m.jsonPath, fieldValuesKey: m.fieldValuesKey })),
                                     timeout:          st.httpTimeout  || 30,
-                                    retry:            st.httpRetry    || false,
-                                    onFailure:        st.httpOnFailure || 'stop'
+                                    retry:            st.httpRetry      || false,
+                                    retryCount:       st.httpRetry ? 2 : 0,
+                                    onFailure:        st.httpOnFailure   || 'stop'
                                 })
                                 : JSON.stringify({
                                     recordTypeId:        st.recordTypeId        || null,
