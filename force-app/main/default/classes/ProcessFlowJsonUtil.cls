@@ -140,4 +140,25 @@ public with sharing class ProcessFlowJsonUtil {
             return new Map<String, Object>();
         }
     }
+
+    /**
+     * Returns the schema version from a JSON map, or 0 if absent.
+     * Use to guard against schema evolution mismatches.
+     */
+    public static Integer getSchemaVersion(Map<String, Object> data) {
+        if (data == null || !data.containsKey('_v')) return 0;
+        try {
+            return Integer.valueOf(data.get('_v'));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Validates that a parsed JSON map has a minimum schema version.
+     * Returns true if valid, false if stale/missing version.
+     */
+    public static Boolean isSchemaVersionValid(Map<String, Object> data, Integer minVersion) {
+        return getSchemaVersion(data) >= minVersion;
+    }
 }

@@ -138,11 +138,13 @@ public with sharing class ProcessExecutionEngine {
         if (parsed instanceof List<Object>) {
             // Old format: flat array
             fieldDefs = (List<Object>) parsed;
-        } else {
+        } else if (parsed instanceof Map<String, Object>) {
             // New format: {recordTypeId, fields}
             Map<String, Object> cfg = (Map<String, Object>) parsed;
             recordTypeId = (String) cfg.get('recordTypeId');
             fieldDefs = cfg.get('fields') != null ? (List<Object>) cfg.get('fields') : new List<Object>();
+        } else {
+            fieldDefs = new List<Object>();
         }
 
         if (String.isNotBlank(recordTypeId)) {
@@ -176,10 +178,13 @@ public with sharing class ProcessExecutionEngine {
         SObject record = objType.newSObject(recordId);
 
         Object parsed = JSON.deserializeUntyped(fieldsConfig);
-        List<Object> fieldDefs = parsed instanceof List<Object>
-            ? (List<Object>) parsed
-            : (List<Object>) ((Map<String, Object>) parsed).get('fields');
-        if (fieldDefs == null) fieldDefs = new List<Object>();
+        List<Object> fieldDefs = new List<Object>();
+        if (parsed instanceof List<Object>) {
+            fieldDefs = (List<Object>) parsed;
+        } else if (parsed instanceof Map<String, Object>) {
+            Map<String, Object> cfg = (Map<String, Object>) parsed;
+            fieldDefs = cfg.get('fields') != null ? (List<Object>) cfg.get('fields') : new List<Object>();
+        }
 
         for (Object fc : fieldDefs) {
             Map<String, Object> fieldDef = (Map<String, Object>) fc;

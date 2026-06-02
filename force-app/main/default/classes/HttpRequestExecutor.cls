@@ -28,6 +28,15 @@ public with sharing class HttpRequestExecutor {
         Boolean retry          = config.containsKey('retry') && (Boolean) config.get('retry');
         String onFailure       = config.containsKey('onFailure') ? (String) config.get('onFailure') : 'stop';
 
+        // Validate namedCredential is not blank and path starts with /
+        if (String.isBlank(namedCredential)) {
+            throw new AuraHandledException('HTTP Request step: Named Credential is required.');
+        }
+        if (String.isBlank(path)) path = '/';
+        if (!path.startsWith('/')) path = '/' + path;
+        // Remove any double slashes to prevent path traversal
+        path = path.replaceAll('/+', '/');
+
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:' + namedCredential + path);
         req.setMethod(method);
