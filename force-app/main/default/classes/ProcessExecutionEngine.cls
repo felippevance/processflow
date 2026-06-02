@@ -106,6 +106,7 @@ public with sharing class ProcessExecutionEngine {
                 execData.put('createdRecords', createdRecords);
             }
 
+            execData.put('_v', 1);
             existing.CurrentStep__c = stepId;
             existing.ExecutionData__c = JSON.serialize(execData);
             update existing;

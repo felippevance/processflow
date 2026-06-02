@@ -48,6 +48,10 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         if (!this._processId) this.init();
     }
 
+    disconnectedCallback() {
+        this.stopApprovalPolling();
+    }
+
     async init() {
         if (this._initialized) return;
         this._initialized = true;
@@ -444,20 +448,24 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     }
 
     extractError(err) {
-        if (!err) return 'Unknown error';
-        // Apex AuraHandledException — most common
-        if (err.body?.message) return err.body.message;
-        // DML errors with field details
-        if (err.body?.output?.errors?.length) {
-            return err.body.output.errors.map(e => e.message || e.errorCode).join('; ');
+        try {
+            if (!err) return 'Unknown error';
+            // Apex AuraHandledException — most common
+            if (err.body?.message) return err.body.message;
+            // DML errors with field details
+            if (err.body?.output?.errors?.length) {
+                return err.body.output.errors.map(e => e.message || e.errorCode).join('; ');
+            }
+            // Nested fieldErrors (e.g. required field missing per field)
+            if (err.body?.output?.fieldErrors) {
+                const fe = err.body.output.fieldErrors;
+                return Object.keys(fe).map(f => fe[f].map(e => `${f}: ${e.message}`).join(', ')).join('; ');
+            }
+            if (err.message) return err.message;
+            try { return JSON.stringify(err); } catch(e) { return 'Step failed'; }
+        } catch(e) {
+            return 'An unexpected error occurred';
         }
-        // Nested fieldErrors (e.g. required field missing per field)
-        if (err.body?.output?.fieldErrors) {
-            const fe = err.body.output.fieldErrors;
-            return Object.keys(fe).map(f => fe[f].map(e => `${f}: ${e.message}`).join(', ')).join('; ');
-        }
-        if (err.message) return err.message;
-        try { return JSON.stringify(err); } catch(e) { return 'Step failed'; }
     }
 
     showToast(title, message, variant) {

@@ -7,7 +7,8 @@ public with sharing class ConditionEvaluator {
         try {
             conditions = (List<Object>) JSON.deserializeUntyped(conditionsJson);
         } catch (Exception e) {
-            return true;
+            System.debug(LoggingLevel.WARN, 'ConditionEvaluator: malformed JSON, allowing stage: ' + e.getMessage());
+            return true; // malformed JSON — don't block execution, but log it
         }
         if (conditions == null || conditions.isEmpty()) return true;
 
