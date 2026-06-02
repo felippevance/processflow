@@ -201,6 +201,109 @@ processflow/
 
 ---
 
+---
+
+## 🚀 Migrating Processes Between Orgs
+
+ProcessFlow uses `ExternalId__c` on `Process__c`, `Stage__c` and `Step__c` to enable safe upsert-based migration between orgs — no duplicate records, no broken references.
+
+Every record gets a unique ID auto-generated on insert:
+```
+F92FD63A-PROC-onboarding-de-novo-funcionario-v1
+F92FD63A-STAGE-cadastro-1
+F92FD63A-STEP-criar-empresa-1-1
+```
+
+### Migration Script
+
+The `scripts/migrate-process.js` script handles the full export → import flow. It requires no `npm install` — only the Salesforce CLI (`sf`).
+
+#### Mode 1 — Interactive (no arguments)
+
+```bash
+node scripts/migrate-process.js
+```
+
+Lists all active processes in the source org and lets you choose which ones to migrate:
+
+```
+  Available processes:
+
+  [1] Abertura de Chamado v1 (current)
+  [2] Onboarding de Novo Funcionário v1 (current)
+
+  Select processes (e.g. 1,3 or "all"): 1,2
+```
+
+#### Mode 2 — Config file
+
+Create or edit `scripts/migration.json`:
+
+```json
+{
+  "from": "source-org-alias",
+  "to": "target-org-alias",
+  "processes": [
+    "Onboarding de Novo Funcionário",
+    "Abertura de Chamado"
+  ]
+}
+```
+
+Then run:
+
+```bash
+node scripts/migrate-process.js --config scripts/migration.json
+```
+
+> Tip: create a `scripts/migration.local.json` (already in `.gitignore`) for per-developer overrides without polluting the repo.
+
+#### Mode 3 — CLI flags (for CI/CD pipelines)
+
+```bash
+node scripts/migrate-process.js \
+  --from source-org \
+  --to target-org \
+  --process "Onboarding de Novo Funcionário" \
+  --process "Abertura de Chamado"
+```
+
+#### Example output
+
+```
+ProcessFlow Migration
+──────────────────────────────────────────────────
+
+Verifying orgs...
+  ✔ Connected to source-org
+  ✔ Connected to target-org
+
+Loading processes from source org...
+  → Found: Onboarding de Novo Funcionário (v1) [F92FD63A-PROC-onboarding-de-novo-funcionario-v1]
+  → Found: Abertura de Chamado (v1) [A1B2C3D4-PROC-abertura-de-chamado-v1]
+
+  Exported: 2 process(es), 5 stage(s), 9 step(s)
+
+Importing to target org...
+  ✔ Process__c  — 2 record(s) upserted
+  ✔ Stage__c    — 5 record(s) upserted
+  ✔ Step__c     — 9 record(s) upserted
+
+──────────────────────────────────────────────────
+✔ Migration completed successfully!
+  2 process(es) migrated from source-org → target-org
+```
+
+### How it works
+
+1. Exports `Process__c`, `Stage__c` and `Step__c` records from the source org
+2. Strips internal Salesforce IDs and maps parent relationships via `ExternalId__c`
+3. Upserts all records to the target org — safe to run multiple times (idempotent)
+
+> The `ExternalId__c` field is set automatically by an Apex trigger on insert. Existing records without an ID will not be migrated — recreate them through the Builder to generate their IDs.
+
+---
+
 ## Roadmap
 
 - [ ] Conditional branching — skip stages based on field values or record state

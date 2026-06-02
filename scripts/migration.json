@@ -1,0 +1,8 @@
+{
+  "from": "source-org-alias",
+  "to": "target-org-alias",
+  "processes": [
+    "Onboarding de Novo Funcionário",
+    "Abertura de Chamado"
+  ]
+}
