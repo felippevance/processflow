@@ -42,6 +42,18 @@
                                 </div>
                             </div>
 
+                            <!-- Conditions -->
+                            <template if:true={stage.hasConditions}>
+                                <div class="slds-m-bottom_x-small slds-m-top_xx-small">
+                                    <lightning-badge label={stage.conditionLogic} class="slds-m-right_xx-small"></lightning-badge>
+                                    <template for:each={stage.conditions} for:item="cond">
+                                        <span key={cond.field} class="slds-badge slds-m-right_xx-small" style="background:#f3f3f3;color:#444;font-size:11px;">
+                                            {cond.field} {cond.operator} {cond.value}
+                                        </span>
+                                    </template>
+                                </div>
+                            </template>
+
                             <!-- Steps -->
                             <template for:each={stage.steps} for:item="step">
                                 <div key={step.Id} class="slds-m-bottom_x-small slds-p-around_x-small" style="background:#f3f3f3; border-radius:4px;">

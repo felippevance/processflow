@@ -44,24 +44,35 @@ export default class PflowViewer extends LightningElement {
             this.processDescription = details.Description__c;
             this.processVersion     = details.Version__c;
 
-            this.stagesWithSteps = stagesData.map(s => ({
-                stage: s.stage,
-                steps: s.steps.map(st => {
-                    let fieldCount = 0;
-                    const targetObjectName = st.TargetObject__c || '';
-                    try {
-                        const cfg = JSON.parse(st.FieldsConfig__c || '[]');
-                        fieldCount = Array.isArray(cfg) ? cfg.length : 0;
-                    } catch(e) {}
-                    return {
-                        ...st,
-                        typeIcon:        TYPE_ICONS[st.Type__c] || 'utility:flow',
-                        typeLabel:       TYPE_LABELS[st.Type__c] || st.Type__c,
-                        targetObjectName,
-                        fieldCount:      fieldCount || null
-                    };
-                })
-            }));
+            this.stagesWithSteps = stagesData.map(s => {
+                let conditions = [];
+                try {
+                    if (s.stage.ConditionsConfig__c) {
+                        conditions = JSON.parse(s.stage.ConditionsConfig__c);
+                    }
+                } catch(e) {}
+                return {
+                    stage: s.stage,
+                    conditionLogic: s.stage.ConditionLogic__c || 'AND',
+                    conditions,
+                    hasConditions: conditions.length > 0,
+                    steps: s.steps.map(st => {
+                        let fieldCount = 0;
+                        const targetObjectName = st.TargetObject__c || '';
+                        try {
+                            const cfg = JSON.parse(st.FieldsConfig__c || '[]');
+                            fieldCount = Array.isArray(cfg) ? cfg.length : (cfg.fields ? cfg.fields.length : 0);
+                        } catch(e) {}
+                        return {
+                            ...st,
+                            typeIcon:        TYPE_ICONS[st.Type__c] || 'utility:flow',
+                            typeLabel:       TYPE_LABELS[st.Type__c] || st.Type__c,
+                            targetObjectName,
+                            fieldCount:      fieldCount || null
+                        };
+                    })
+                };
+            });
         } catch (e) {
             this.showToast('Error', e.body?.message || 'Failed to load process', 'error');
         } finally {
