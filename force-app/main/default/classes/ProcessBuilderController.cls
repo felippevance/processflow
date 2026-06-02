@@ -91,6 +91,11 @@ public with sharing class ProcessBuilderController {
         return result;
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getApprovalProcesses() {
+        return ApprovalController.getApprovalProcesses();
+    }
+
     private static void validatePayload(Map<String, Object> payload) {
         String name = (String) payload.get('name');
         if (String.isBlank(name)) throw new AuraHandledException('Process name is required.');
