@@ -142,9 +142,10 @@ sf org assign permset --name ProcessFlow_Admin --target-org my-org
 2. **Screen 1 — Process**: Enter a name and description
 3. **Screen 2 — Stages**: Add stages (e.g. "Intake", "Approval", "Completion")
 4. **Screen 3 — Steps**: For each stage, add steps:
-   - Select type: `Create Record`, `Update Record`, or `Notification`
+   - Select type: `Create Record`, `Update Record`, `Notification`, or `HTTP Request`
    - For Create/Update: enter the object API name, click **Load Fields**, select fields to expose, optionally select a Record Type
    - For Notification: write a message template
+   - For HTTP Request: select a Named Credential, set method + path, configure body mappings (process field → JSON key), response mappings (response path → saved as), timeout, retry flag, and on-failure behavior
 5. **Screen 4 — Review**: Confirm the structure and click **Save Process**
 
 ### Running a Process (Business User)
@@ -154,6 +155,20 @@ sf org assign permset --name ProcessFlow_Admin --target-org my-org
 3. Fill in the fields for each step and click **Next**
 4. On the last step, click **Finish**
 5. The success screen shows links to all records created during the process
+
+### HTTP Request Step (Admin)
+
+1. In the **Process Builder**, add a step and select type `HTTP Request`
+2. Select a **Named Credential** (pre-configured in Salesforce Setup)
+3. Set the **Method** (GET, POST, PUT, PATCH, DELETE) and **Path** (e.g. `/v1/customers`)
+4. Add **Headers** if needed (e.g. `Content-Type: application/json`)
+5. Add **Body Mappings** — each row maps a process field value to a JSON key in the request body (e.g. `name ← FirstName`)
+6. Add **Response Mappings** — each row saves a field from the API response back into the process context (e.g. `id → externalId`), making it available for conditions and subsequent steps
+7. Set **Timeout** (seconds), **Retry** checkbox (signals middleware to retry), and **On Failure** (`Stop process` or `Continue to next step`)
+
+> The Runner shows an "HTTP Request" preview card for this step type and displays "Calling external API..." in the spinner while waiting for the response.
+
+---
 
 ### Conditional Branching (Admin)
 
