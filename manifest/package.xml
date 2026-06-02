@@ -29,6 +29,8 @@
     </types>
 
     <types>
+        <members>ConditionEvaluator</members>
+        <members>ConditionEvaluatorTest</members>
         <members>ProcessBuilderController</members>
         <members>ProcessBuilderControllerTest</members>
         <members>ProcessExecutionEngine</members>
