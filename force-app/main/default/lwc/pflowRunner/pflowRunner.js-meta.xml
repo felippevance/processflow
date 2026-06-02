@@ -16,6 +16,8 @@
             <property name="processId" type="String" label="Process to Run"
                 description="Select the process to run. Leave blank to show all active processes."
                 datasource="apex://ProcessPicklistProvider" />
+            <property name="useRecordId" type="Boolean" label="Use current record ID as process input"
+                description="If checked, the current record's ID will be automatically passed as the starting input to the process." />
             <objects>
                 <object>Account</object>
                 <object>Opportunity</object>

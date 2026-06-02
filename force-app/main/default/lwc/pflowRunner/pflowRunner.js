@@ -18,6 +18,9 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         if (value) this.init();
     }
 
+    @api recordId;      // injected automatically on Record Pages
+    @api useRecordId;   // checkbox set by admin in App Builder
+
     @track processName    = 'Run a Process';
     @track activeProcesses = [];
     @track showProcessList = false;
@@ -65,6 +68,12 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         try {
             const exec = await startExecution({ processId });
             this.executionId = exec.Id;
+
+            // If admin enabled "Use current record ID", seed it as recordId in fieldValues
+            if (this.useRecordId && this.recordId) {
+                this.fieldValues = { recordId: this.recordId };
+            }
+
             await this.loadStepsAndContinue(processId, null);
         } catch (err) {
             this.showToast('Error', err.body?.message || 'Failed to start process', 'error');
