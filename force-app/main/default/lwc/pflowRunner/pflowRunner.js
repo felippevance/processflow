@@ -55,6 +55,11 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
 
     disconnectedCallback() {
         this.stopApprovalPolling();
+        // Clear any pending state to prevent memory leaks
+        this.stagesWithSteps   = [];
+        this.activeProcesses   = [];
+        this.resumeExecution   = null;
+        this._initialized      = false;
     }
 
     async init() {
@@ -82,7 +87,9 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
             this.activeProcesses = processes;
             this.showProcessList = true;
         } catch (e) {
-            this.showToast('Error', e.body?.message || 'Failed to load', 'error');
+            const msg = e.body?.message || e.message || 'Failed to initialize process. Please refresh and try again.';
+            this.showToast('Error', msg, 'error');
+            console.error('ProcessFlow init error:', e);
         }
     }
 
@@ -111,8 +118,13 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         // Restore fieldValues from ExecutionData__c
         try {
             const execData = JSON.parse(exec.ExecutionData__c || '{}');
-            this.fieldValues = execData.fieldValues || {};
+            if (execData && typeof execData === 'object') {
+                this.fieldValues = execData.fieldValues || {};
+            } else {
+                this.fieldValues = {};
+            }
         } catch(e) {
+            console.error('ProcessFlow: Failed to restore execution data:', e);
             this.fieldValues = {};
         }
 
@@ -491,8 +503,14 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
             }
             // else still Pending — keep polling
         } catch(e) {
-            this.stopApprovalPolling();
-            this.stepError = e.body?.message || 'Failed to check approval status';
+            // Only stop polling on non-network errors — network blips should retry
+            const isNetworkError = !e.body && !!e.message;
+            if (!isNetworkError) {
+                this.stopApprovalPolling();
+                this.stepError = this.extractError(e);
+            } else {
+                console.warn('ProcessFlow: Approval poll network error, will retry:', e.message);
+            }
         }
     }
 
