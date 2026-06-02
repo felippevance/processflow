@@ -33,6 +33,7 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 - **Default values** — fields pre-populated with configured defaults; user can override
 - **Error feedback** — inline error banner with the exact Salesforce error message
 - **Post-completion navigation** — links to every record created during the process
+- **Record context** — when placed on a Record Page, the component can automatically use the current record's ID as the starting input to the process
 
 ### Platform
 - **Execution Logging** — every step execution logged to `ExecutionLog__c` with status, input data, and error messages
@@ -82,7 +83,7 @@ ExecutionLog__c (audit trail — persisted)
 | Component | Target | Description |
 |-----------|--------|-------------|
 | `pflowBuilder` | App Page | 4-screen wizard: Process → Stages → Steps → Review & Save |
-| `pflowRunner` | App Page, Record Page | Executes a process step by step with dynamic forms |
+| `pflowRunner` | App Page, Record Page | Executes a process step by step with dynamic forms. On Record Pages, supports injecting the current record's ID as process input via the **"Use current record ID"** checkbox in App Builder |
 | `pflowViewer` | Record Page (`Process__c`) | Read-only process visualization by stage/step |
 | `pflowHistory` | Record Page (`Process__c`) | Execution history datatable with status and errors |
 
