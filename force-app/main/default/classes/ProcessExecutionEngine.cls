@@ -1,8 +1,11 @@
 public with sharing class ProcessExecutionEngine {
 
     public class StepResult {
-        @AuraEnabled public String createdRecordId   { get; set; }
-        @AuraEnabled public String createdObjectType { get; set; }
+        @AuraEnabled public String  createdRecordId   { get; set; }
+        @AuraEnabled public String  createdObjectType { get; set; }
+        @AuraEnabled public Boolean isWaitingApproval { get; set; }
+        @AuraEnabled public String  rejectionStageId  { get; set; }
+        @AuraEnabled public String  onRejection       { get; set; }
     }
 
     // Called from test/anonymous Apex — queries step from DB
@@ -26,6 +29,21 @@ public with sharing class ProcessExecutionEngine {
                 Id createdId = createRecord(targetObject, fieldsConfig, inputData);
                 result.createdRecordId   = createdId;
                 result.createdObjectType = targetObject;
+
+                // Check if this step requires approval
+                Object parsed = JSON.deserializeUntyped(fieldsConfig);
+                Map<String, Object> cfg = parsed instanceof Map<String, Object>
+                    ? (Map<String, Object>) parsed
+                    : new Map<String, Object>();
+                Boolean requiresApproval = cfg.containsKey('requiresApproval') && (Boolean) cfg.get('requiresApproval');
+                String approvalProcessName = (String) cfg.get('approvalProcessName');
+
+                if (requiresApproval && String.isNotBlank(approvalProcessName) && createdId != null) {
+                    ApprovalService.submit(createdId, approvalProcessName, executionId);
+                    result.isWaitingApproval = true;
+                    result.onRejection       = (String) cfg.get('onRejection');
+                    result.rejectionStageId  = (String) cfg.get('rejectionStageId');
+                }
             }
             when 'Update Record' {
                 updateRecord(targetObject, fieldsConfig, inputData);
@@ -45,6 +63,9 @@ public with sharing class ProcessExecutionEngine {
         }
 
         Boolean isLastStep = inputData.containsKey('isLastStep') && (Boolean) inputData.get('isLastStep');
+
+        // If waiting for approval, do not advance execution state — polling handles this
+        if (result.isWaitingApproval == true) return result;
 
         if (isLastStep) {
             Execution__c completed = new Execution__c(
