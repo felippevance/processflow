@@ -113,7 +113,8 @@ public with sharing class ProcessRunnerController {
 
         List<Step__c> steps = [
             SELECT Id, Name, Sequence__c, Stage__c,
-                   Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c
+                   Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
+                   RequiresApproval__c, ApprovalProcessName__c
             FROM Step__c
             WHERE Stage__c IN :stageIds
             WITH SECURITY_ENFORCED
@@ -175,7 +176,8 @@ public with sharing class ProcessRunnerController {
             if (passes) {
                 List<Step__c> steps = [
                     SELECT Id, Name, Sequence__c, Stage__c,
-                           Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c
+                           Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
+                           RequiresApproval__c, ApprovalProcessName__c
                     FROM Step__c
                     WHERE Stage__c = :candidate.Id
                     WITH SECURITY_ENFORCED
