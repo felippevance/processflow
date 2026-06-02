@@ -137,6 +137,33 @@ public with sharing class ProcessBuilderController {
                         throw new AuraHandledException('HTTP Request step "' + step.get('name') + '" requires a Named Credential.');
                     }
                 }
+
+                // Validate FieldsConfig JSON integrity for Create/Update Record steps
+                if (stepType == 'Create Record' || stepType == 'Update Record') {
+                    String fieldsConfigStr = (String) step.get('fieldsConfig');
+                    if (String.isNotBlank(fieldsConfigStr)) {
+                        try {
+                            Object parsed = JSON.deserializeUntyped(fieldsConfigStr);
+                            // Accept both old array format and new {fields:[]} format
+                            if (!(parsed instanceof List<Object>) && !(parsed instanceof Map<String,Object>)) {
+                                throw new AuraHandledException('Step "' + step.get('name') + '" has invalid fields configuration.');
+                            }
+                        } catch (JSONException e) {
+                            throw new AuraHandledException('Step "' + step.get('name') + '" has invalid JSON in fields configuration: ' + e.getMessage());
+                        }
+                    }
+                }
+
+                // Validate Notification step has a non-empty message template
+                if (stepType == 'Notification') {
+                    Map<String,Object> notifCfg = null;
+                    try {
+                        notifCfg = (Map<String,Object>) JSON.deserializeUntyped((String) step.get('fieldsConfig'));
+                    } catch(Exception e) {}
+                    if (notifCfg == null || String.isBlank((String) notifCfg.get('messageTemplate'))) {
+                        throw new AuraHandledException('Notification step "' + step.get('name') + '" requires a message template.');
+                    }
+                }
             }
         }
     }
