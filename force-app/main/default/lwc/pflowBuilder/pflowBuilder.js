@@ -420,7 +420,36 @@ export default class PflowBuilder extends LightningElement {
         });
     }
 
-    goNext() { if (this.currentScreen < 4) this.currentScreen++; }
+    goNext() {
+        if (this.currentScreen === 2) {
+            // Validate stages have at least one step
+            const emptyStage = this.stages.find(s => !s.steps || s.steps.length === 0);
+            if (emptyStage) {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Validation Error',
+                    message: `Stage "${emptyStage.name || 'unnamed'}" must have at least one step.`,
+                    variant: 'error'
+                }));
+                return;
+            }
+        }
+        if (this.currentScreen === 3) {
+            // Validate HTTP Request steps have Named Credential
+            for (const stage of this.stages) {
+                for (const step of stage.steps) {
+                    if (step.type === 'HTTP Request' && !step.httpNamedCredential) {
+                        this.dispatchEvent(new ShowToastEvent({
+                            title: 'Validation Error',
+                            message: `HTTP Request step "${step.name || 'unnamed'}" in stage "${stage.name}" requires a Named Credential.`,
+                            variant: 'error'
+                        }));
+                        return;
+                    }
+                }
+            }
+        }
+        if (this.currentScreen < 4) this.currentScreen++;
+    }
     goBack() { if (this.currentScreen > 1) this.currentScreen--; }
 
     async saveProcess() {

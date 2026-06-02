@@ -123,6 +123,15 @@ public with sharing class ProcessBuilderController {
                 if ((stepType == 'Create Record' || stepType == 'Update Record') && String.isBlank((String) step.get('targetObject'))) {
                     throw new AuraHandledException('Step "' + step.get('name') + '" requires a target object.');
                 }
+                if (stepType == 'HTTP Request') {
+                    Map<String,Object> httpCfg = null;
+                    try {
+                        httpCfg = (Map<String,Object>) JSON.deserializeUntyped((String) step.get('fieldsConfig'));
+                    } catch(Exception e) {}
+                    if (httpCfg == null || String.isBlank((String) httpCfg.get('namedCredential'))) {
+                        throw new AuraHandledException('HTTP Request step "' + step.get('name') + '" requires a Named Credential.');
+                    }
+                }
             }
         }
     }
