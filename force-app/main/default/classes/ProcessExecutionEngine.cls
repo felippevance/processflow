@@ -33,6 +33,15 @@ public with sharing class ProcessExecutionEngine {
             when 'Notification' {
                 sendNotification(fieldsConfig, inputData);
             }
+            when 'HTTP Request' {
+                // Get current fieldValues from execution context for body mapping
+                Map<String, Object> currentFieldValues = inputData.containsKey('fieldValues')
+                    ? (Map<String, Object>) inputData.get('fieldValues')
+                    : inputData;
+                Map<String, Object> responseValues = HttpRequestExecutor.execute(fieldsConfig, currentFieldValues);
+                // Merge response values into inputData so they flow into ExecutionData__c
+                inputData.putAll(responseValues);
+            }
         }
 
         Boolean isLastStep = inputData.containsKey('isLastStep') && (Boolean) inputData.get('isLastStep');
