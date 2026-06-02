@@ -3,6 +3,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import saveProcess from '@salesforce/apex/ProcessBuilderController.saveProcess';
 import getObjectFields from '@salesforce/apex/ProcessBuilderController.getObjectFields';
 import getRecordTypes from '@salesforce/apex/ProcessBuilderController.getRecordTypes';
+import getNamedCredentials from '@salesforce/apex/ProcessBuilderController.getNamedCredentials';
 
 export default class PflowBuilder extends LightningElement {
     @track currentScreen = 1;
@@ -15,8 +16,24 @@ export default class PflowBuilder extends LightningElement {
     stepTypeOptions = [
         { label: 'Create Record', value: 'Create Record' },
         { label: 'Update Record', value: 'Update Record' },
-        { label: 'Notification',  value: 'Notification'  }
+        { label: 'Notification',  value: 'Notification'  },
+        { label: 'HTTP Request',  value: 'HTTP Request'  }
     ];
+
+    httpMethodOptions = [
+        { label: 'GET',    value: 'GET'    },
+        { label: 'POST',   value: 'POST'   },
+        { label: 'PUT',    value: 'PUT'    },
+        { label: 'PATCH',  value: 'PATCH'  },
+        { label: 'DELETE', value: 'DELETE' }
+    ];
+
+    httpOnFailureOptions = [
+        { label: 'Stop process',          value: 'stop'     },
+        { label: 'Continue to next step', value: 'continue' }
+    ];
+
+    @track namedCredentialOptions = [];
 
     conditionLogicOptions = [
         { label: 'AND — all conditions must match', value: 'AND' },
@@ -154,7 +171,7 @@ export default class PflowBuilder extends LightningElement {
         const stageIdx = parseInt(e.currentTarget.dataset.stageIdx, 10);
         this.stages = this.stages.map((s, i) => {
             if (i !== stageIdx) return s;
-            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', showObjectPicker: false, showNotificationConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false }] };
+            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', showObjectPicker: false, showNotificationConfig: false, showHttpConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false, httpNamedCredential: '', httpMethod: 'POST', httpPath: '', httpHeaders: [], httpBodyMappings: [], httpResponseMappings: [], httpTimeout: 30, httpRetry: false, httpOnFailure: 'stop' }] };
         });
     }
     handleStepName(e) {
@@ -168,9 +185,16 @@ export default class PflowBuilder extends LightningElement {
         const type = e.detail.value;
         this.stages = this.stages.map((s, i) => i !== si ? s : {
             ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
-                ...st, type, showObjectPicker: (type === 'Create Record' || type === 'Update Record'), showNotificationConfig: type === 'Notification'
+                ...st,
+                type,
+                showObjectPicker:       (type === 'Create Record' || type === 'Update Record'),
+                showNotificationConfig: type === 'Notification',
+                showHttpConfig:         type === 'HTTP Request'
             })
         });
+        if (type === 'HTTP Request' && this.namedCredentialOptions.length === 0) {
+            this.loadNamedCredentials();
+        }
     }
     handleTargetObject(e) {
         const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
@@ -240,6 +264,162 @@ export default class PflowBuilder extends LightningElement {
         this.stages = this.stages.map((s, i) => i !== si ? s : { ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, messageTemplate: e.target.value }) });
     }
 
+    async loadNamedCredentials() {
+        try {
+            const creds = await getNamedCredentials();
+            this.namedCredentialOptions = creds;
+        } catch (err) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: err.body?.message || 'Failed to load Named Credentials', variant: 'error' }));
+        }
+    }
+
+    handleHttpField(e) {
+        const si    = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi    = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const field = e.currentTarget.dataset.field;
+        const value = e.detail?.value !== undefined ? e.detail.value : e.target.value;
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, [field]: value })
+        });
+    }
+
+    handleHttpRetry(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, httpRetry: e.target.checked })
+        });
+    }
+
+    addHttpHeader(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpHeaders: [...st.httpHeaders, { id: Date.now(), key: '', value: '' }]
+            })
+        });
+    }
+
+    removeHttpHeader(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpHeaders: st.httpHeaders.filter((_, hi) => hi !== idx)
+            })
+        });
+    }
+
+    handleHttpHeaderKey(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpHeaders: st.httpHeaders.map((h, hi) => hi !== idx ? h : { ...h, key: e.target.value })
+            })
+        });
+    }
+
+    handleHttpHeaderValue(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpHeaders: st.httpHeaders.map((h, hi) => hi !== idx ? h : { ...h, value: e.target.value })
+            })
+        });
+    }
+
+    addHttpBodyMapping(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpBodyMappings: [...st.httpBodyMappings, { id: Date.now(), jsonKey: '', processField: '' }]
+            })
+        });
+    }
+
+    removeHttpBodyMapping(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpBodyMappings: st.httpBodyMappings.filter((_, bi) => bi !== idx)
+            })
+        });
+    }
+
+    handleHttpBodyMappingKey(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpBodyMappings: st.httpBodyMappings.map((m, mi) => mi !== idx ? m : { ...m, jsonKey: e.target.value })
+            })
+        });
+    }
+
+    handleHttpBodyMappingField(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpBodyMappings: st.httpBodyMappings.map((m, mi) => mi !== idx ? m : { ...m, processField: e.target.value })
+            })
+        });
+    }
+
+    addHttpResponseMapping(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpResponseMappings: [...st.httpResponseMappings, { id: Date.now(), jsonPath: '', fieldValuesKey: '' }]
+            })
+        });
+    }
+
+    removeHttpResponseMapping(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpResponseMappings: st.httpResponseMappings.filter((_, ri) => ri !== idx)
+            })
+        });
+    }
+
+    handleHttpResponseMappingPath(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpResponseMappings: st.httpResponseMappings.map((m, ri) => ri !== idx ? m : { ...m, jsonPath: e.target.value })
+            })
+        });
+    }
+
+    handleHttpResponseMappingKey(e) {
+        const si  = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi  = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, httpResponseMappings: st.httpResponseMappings.map((m, ri) => ri !== idx ? m : { ...m, fieldValuesKey: e.target.value })
+            })
+        });
+    }
+
     goNext() { if (this.currentScreen < 4) this.currentScreen++; }
     goBack() { if (this.currentScreen > 1) this.currentScreen--; }
 
@@ -270,20 +450,32 @@ export default class PflowBuilder extends LightningElement {
                         targetObject: st.targetObject || null,
                         fieldsConfig: st.type === 'Notification'
                             ? JSON.stringify({ messageTemplate: st.messageTemplate })
-                            : JSON.stringify({
-                                recordTypeId: st.recordTypeId || null,
-                                fields: st.selectedFields.map(f => {
-                                    const meta = st.fieldMeta?.[f] || {};
-                                    return {
-                                        apiName:        f,
-                                        label:          meta.label || f,
-                                        type:           meta.type  || 'STRING',
-                                        required:       meta.required || false,
-                                        defaultValue:   null,
-                                        picklistValues: meta.picklistValues || []
-                                    };
+                            : st.type === 'HTTP Request'
+                                ? JSON.stringify({
+                                    namedCredential:  st.httpNamedCredential,
+                                    method:           st.httpMethod || 'POST',
+                                    path:             st.httpPath   || '/',
+                                    headers:          st.httpHeaders.map(h => ({ key: h.key, value: h.value })),
+                                    bodyMappings:     st.httpBodyMappings.map(m => ({ jsonKey: m.jsonKey, processField: m.processField })),
+                                    responseMappings: st.httpResponseMappings.map(m => ({ jsonPath: m.jsonPath, fieldValuesKey: m.fieldValuesKey })),
+                                    timeout:          st.httpTimeout  || 30,
+                                    retry:            st.httpRetry    || false,
+                                    onFailure:        st.httpOnFailure || 'stop'
                                 })
-                            }),
+                                : JSON.stringify({
+                                    recordTypeId: st.recordTypeId || null,
+                                    fields: st.selectedFields.map(f => {
+                                        const meta = st.fieldMeta?.[f] || {};
+                                        return {
+                                            apiName:        f,
+                                            label:          meta.label || f,
+                                            type:           meta.type  || 'STRING',
+                                            required:       meta.required || false,
+                                            defaultValue:   null,
+                                            picklistValues: meta.picklistValues || []
+                                        };
+                                    })
+                                }),
                         isRequired: false
                     }))
                 }))

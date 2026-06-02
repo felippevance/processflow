@@ -175,6 +175,137 @@
                                 <template if:true={step.showNotificationConfig}>
                                     <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate}></lightning-textarea>
                                 </template>
+                                <template if:true={step.showHttpConfig}>
+                                    <div class="slds-box slds-theme_shade slds-m-top_small">
+                                        <p class="slds-text-title_caps slds-m-bottom_small">HTTP Request Configuration</p>
+
+                                        <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                            <div class="slds-col slds-size_1-of-2">
+                                                <lightning-combobox
+                                                    label="Named Credential"
+                                                    value={step.httpNamedCredential}
+                                                    options={namedCredentialOptions}
+                                                    placeholder="-- Select --"
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    data-field="httpNamedCredential"
+                                                    onchange={handleHttpField}>
+                                                </lightning-combobox>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-4">
+                                                <lightning-combobox
+                                                    label="Method"
+                                                    value={step.httpMethod}
+                                                    options={httpMethodOptions}
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    data-field="httpMethod"
+                                                    onchange={handleHttpField}>
+                                                </lightning-combobox>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-4">
+                                                <lightning-input
+                                                    label="Path"
+                                                    value={step.httpPath}
+                                                    placeholder="/v1/resource"
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    data-field="httpPath"
+                                                    onchange={handleHttpField}>
+                                                </lightning-input>
+                                            </div>
+                                        </div>
+
+                                        <!-- Headers -->
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Headers</p>
+                                        <template for:each={step.httpHeaders} for:item="hdr" for:index="hIdx">
+                                            <div key={hdr.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="Key" value={hdr.key} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderKey}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="Value" value={hdr.value} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderValue}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_2-of-12">
+                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onclick={removeHttpHeader} alternative-text="Remove"></lightning-button-icon>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <lightning-button label="Add Header" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpHeader} class="slds-m-bottom_small"></lightning-button>
+
+                                        <!-- Body Mappings -->
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Body Mappings (JSON Key → Process Field)</p>
+                                        <template for:each={step.httpBodyMappings} for:item="bm" for:index="bmIdx">
+                                            <div key={bm.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="JSON Key" value={bm.jsonKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingKey}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="Process Field" value={bm.processField} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingField}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_2-of-12">
+                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onclick={removeHttpBodyMapping} alternative-text="Remove"></lightning-button-icon>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <lightning-button label="Add Body Field" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpBodyMapping} class="slds-m-bottom_small"></lightning-button>
+
+                                        <!-- Response Mappings -->
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Response Mappings (Response Path → Save as)</p>
+                                        <template for:each={step.httpResponseMappings} for:item="rm" for:index="rmIdx">
+                                            <div key={rm.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="Response Path" value={rm.jsonPath} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingPath}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_5-of-12">
+                                                    <lightning-input label="Save as" value={rm.fieldValuesKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingKey}></lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_2-of-12">
+                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onclick={removeHttpResponseMapping} alternative-text="Remove"></lightning-button-icon>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <lightning-button label="Add Response Mapping" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpResponseMapping} class="slds-m-bottom_small"></lightning-button>
+
+                                        <!-- Timeout, Retry, On Failure -->
+                                        <div class="slds-grid slds-gutters slds-m-top_small">
+                                            <div class="slds-col slds-size_2-of-12">
+                                                <lightning-input
+                                                    type="number"
+                                                    label="Timeout (s)"
+                                                    value={step.httpTimeout}
+                                                    min="1"
+                                                    max="120"
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    data-field="httpTimeout"
+                                                    onchange={handleHttpField}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="slds-col slds-size_3-of-12">
+                                                <lightning-input
+                                                    type="checkbox"
+                                                    label="Retry (handled by middleware)"
+                                                    checked={step.httpRetry}
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    onchange={handleHttpRetry}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="slds-col slds-size_4-of-12">
+                                                <lightning-combobox
+                                                    label="On Failure"
+                                                    value={step.httpOnFailure}
+                                                    options={httpOnFailureOptions}
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    data-field="httpOnFailure"
+                                                    onchange={handleHttpField}>
+                                                </lightning-combobox>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <lightning-button label="Add Step" data-stage-idx={stageIdx} onclick={addStep} icon-name="utility:add"></lightning-button>
