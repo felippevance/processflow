@@ -136,6 +136,16 @@
         <field>Stage__c.Sequence__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Stage__c.ConditionLogic__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Stage__c.ConditionsConfig__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 
     <!-- Field Access: Step__c -->
     <fieldPermissions>
