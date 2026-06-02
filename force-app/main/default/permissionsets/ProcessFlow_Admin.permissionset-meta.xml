@@ -184,6 +184,16 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Step__c.SkipConditionsConfig__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.SkipConditionLogic__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Step__c.RequiresApproval__c</field>
         <readable>true</readable>
     </fieldPermissions>

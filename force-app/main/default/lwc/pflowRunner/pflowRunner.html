@@ -66,6 +66,25 @@
                     </div>
                 </template>
 
+                <!-- Update Record: Record ID input -->
+                <template if:true={isUpdateRecordStep}>
+                    <template if:false={hasRecordId}>
+                        <div class="slds-m-bottom_medium slds-box slds-theme_shade">
+                            <lightning-input
+                                label="Record ID to Update"
+                                value={updateRecordId}
+                                placeholder="Paste the Salesforce record ID"
+                                data-field-api="recordId"
+                                onchange={handleRecordIdChange}
+                                required>
+                            </lightning-input>
+                            <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                Enter the ID of the record you want to update (e.g. from a previous step's created record).
+                            </p>
+                        </div>
+                    </template>
+                </template>
+
                 <!-- Dynamic Form Fields -->
                 <template for:each={currentFields} for:item="field">
                     <div key={field.apiName} class="slds-m-bottom_small">

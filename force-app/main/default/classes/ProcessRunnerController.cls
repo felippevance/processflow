@@ -114,7 +114,8 @@ public with sharing class ProcessRunnerController {
         List<Step__c> steps = [
             SELECT Id, Name, Sequence__c, Stage__c,
                    Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
-                   RequiresApproval__c, ApprovalProcessName__c
+                   RequiresApproval__c, ApprovalProcessName__c,
+                   SkipConditionsConfig__c, SkipConditionLogic__c
             FROM Step__c
             WHERE Stage__c IN :stageIds
             WITH SECURITY_ENFORCED
@@ -176,7 +177,8 @@ public with sharing class ProcessRunnerController {
             for (Step__c st : [
                 SELECT Id, Name, Sequence__c, Stage__c,
                        Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
-                       RequiresApproval__c, ApprovalProcessName__c
+                       RequiresApproval__c, ApprovalProcessName__c,
+                       SkipConditionsConfig__c, SkipConditionLogic__c
                 FROM Step__c
                 WHERE Stage__c IN :remainingStageIds
                 WITH SECURITY_ENFORCED
@@ -308,6 +310,24 @@ public with sharing class ProcessRunnerController {
             WITH SECURITY_ENFORCED
             ORDER BY ExecutedAt__c ASC
         ];
+    }
+
+    @AuraEnabled
+    public static Boolean checkSkipConditions(Id stepId, Id executionId) {
+        Step__c step = [
+            SELECT Id, SkipConditionsConfig__c, SkipConditionLogic__c
+            FROM Step__c WHERE Id = :stepId WITH SECURITY_ENFORCED
+        ];
+        if (String.isBlank(step.SkipConditionsConfig__c)) return false;
+
+        Execution__c exec = [
+            SELECT ExecutionData__c FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED
+        ];
+        return ConditionEvaluator.evaluate(
+            step.SkipConditionsConfig__c,
+            step.SkipConditionLogic__c,
+            exec.ExecutionData__c
+        );
     }
 
     @AuraEnabled

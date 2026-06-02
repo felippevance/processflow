@@ -11,6 +11,7 @@ import cancelExecution            from '@salesforce/apex/ProcessRunnerController
 import getNextStage               from '@salesforce/apex/ProcessRunnerController.getNextStage';
 import checkApprovalStatus from '@salesforce/apex/ApprovalController.checkApprovalStatus';
 import cancelApproval      from '@salesforce/apex/ApprovalController.cancelApproval';
+import checkSkipConditions from '@salesforce/apex/ProcessRunnerController.checkSkipConditions';
 
 export default class PflowRunner extends NavigationMixin(LightningElement) {
 
@@ -40,6 +41,7 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     @track stepError         = null;
     @track showResumePrompt  = false;
     @track resumeExecution   = null;
+    @track updateRecordId = '';
     @track isWaitingApproval         = false;
     @track approvalOnRejection       = 'Stop';
     @track approvalRejectionStageId  = null;
@@ -188,8 +190,10 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     get isLastStep() {
         return this.currentStepIndex === this.currentSteps.length - 1;
     }
-    get isNotificationStep() { return this.currentStepType === 'Notification'; }
-    get isHttpStep()         { return this.currentStepType === 'HTTP Request'; }
+    get isNotificationStep()  { return this.currentStepType === 'Notification'; }
+    get isHttpStep()          { return this.currentStepType === 'HTTP Request'; }
+    get isUpdateRecordStep()  { return this.currentStepType === 'Update Record'; }
+    get hasRecordId()         { return !!this.fieldValues.recordId; }
     get executingLabel()     { return this.isHttpStep ? 'Calling external API...' : 'Processing...'; }
     get hasCreatedRecords()  { return this.createdRecords.length > 0; }
 
@@ -248,6 +252,11 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
 
     handleCheckboxChange(e) {
         this.fieldValues = { ...this.fieldValues, [e.currentTarget.dataset.fieldApi]: e.target.checked };
+    }
+
+    handleRecordIdChange(e) {
+        this.updateRecordId = e.target.value;
+        this.fieldValues = { ...this.fieldValues, recordId: e.target.value };
     }
 
     async goNextStep() {
@@ -343,9 +352,26 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
             this.showToast('Error', 'No active execution found. Please refresh and try again.', 'error');
             throw new Error('No executionId');
         }
-        try {
-            const step = this.currentStep;
 
+        // Check if this step should be skipped based on skip conditions
+        const step = this.currentStep;
+        if (step?.SkipConditionsConfig__c) {
+            try {
+                const skipResult = await checkSkipConditions({
+                    stepId: step.Id,
+                    executionId: this.executionId
+                });
+                if (skipResult === true) {
+                    // Skip this step — don't execute, just return
+                    return;
+                }
+            } catch(e) {
+                // If condition check fails, proceed with execution
+                console.warn('Skip condition check failed:', e);
+            }
+        }
+
+        try {
             // Merge defaultValues for fields the user didn't touch
             const payload = {};
             try {
@@ -479,6 +505,7 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         this.stopApprovalPolling();
         this._initialized    = false;
         this.showSuccess     = false;
+        this.updateRecordId  = '';
         this.showExecution   = false;
         this.showProcessList = false;
         this.showResumePrompt  = false;
