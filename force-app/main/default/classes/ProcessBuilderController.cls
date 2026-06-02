@@ -128,8 +128,10 @@ public with sharing class ProcessBuilderController {
 
                         Stage__c stage = new Stage__c(
                             Name                = (String) stageData.get('name'),
-                            Sequence__c  = (Decimal) stageData.get('sequence'),
-                            Process__c   = process.Id
+                            Sequence__c         = (Decimal) stageData.get('sequence'),
+                            Process__c          = process.Id,
+                            ConditionLogic__c   = String.isBlank((String) stageData.get('conditionLogic')) ? 'AND' : (String) stageData.get('conditionLogic'),
+                            ConditionsConfig__c = (String) stageData.get('conditionsConfig')
                         );
                         insert stage;
 
@@ -175,7 +177,7 @@ public with sharing class ProcessBuilderController {
         ];
 
         List<Stage__c> stages = [
-            SELECT Id, Name, Sequence__c FROM Stage__c
+            SELECT Id, Name, Sequence__c, ConditionLogic__c, ConditionsConfig__c FROM Stage__c
             WHERE Process__c = :processId
             WITH SECURITY_ENFORCED
             ORDER BY Sequence__c ASC
@@ -213,9 +215,11 @@ public with sharing class ProcessBuilderController {
             Map<Id, Id> stageIdMap = new Map<Id, Id>();
             for (Stage__c s : stages) {
                 Stage__c newStage = new Stage__c(
-                    Name        = s.Name,
-                    Sequence__c = s.Sequence__c,
-                    Process__c  = newProcess.Id
+                    Name                = s.Name,
+                    Sequence__c         = s.Sequence__c,
+                    Process__c          = newProcess.Id,
+                    ConditionLogic__c   = s.ConditionLogic__c,
+                    ConditionsConfig__c = s.ConditionsConfig__c
                 );
                 insert newStage;
                 stageIdMap.put(s.Id, newStage.Id);
