@@ -67,7 +67,8 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
 
     async startFresh(processId) {
         try {
-            const exec = await startExecution({ processId });
+            const targetRecordId = (this.useRecordId && this.recordId) ? this.recordId : null;
+            const exec = await startExecution({ processId, targetRecordId });
             this.executionId = exec.Id;
 
             // If admin enabled "Use current record ID", seed it as recordId in fieldValues
@@ -84,7 +85,7 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     async selectProcess(e) {
         const processId = e.currentTarget.dataset.processId;
         try {
-            const exec = await startExecution({ processId });
+            const exec = await startExecution({ processId, targetRecordId: null });
             this.executionId = exec.Id;
             await this.loadStepsAndContinue(processId, null);
         } catch (err) {
