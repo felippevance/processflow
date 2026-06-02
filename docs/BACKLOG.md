@@ -8,7 +8,7 @@ Last updated: 2026-06-02
 
 | # | Feature | Priority | Notes |
 |---|---------|----------|-------|
-| 1 | **XSS Chatter sanitization** — `escapeSingleQuotes` não previne HTML/script em `messageTemplate`; precisa sanitizar completamente | 🔴 High (security before AppExchange) | `ProcessExecutionEngine.sendNotification()` |
+| ~~1~~ | ~~**XSS Chatter sanitization** — `escapeSingleQuotes` não previne HTML/script em `messageTemplate`; precisa sanitizar completamente | 🔴 High (security before AppExchange) | `ProcessExecutionEngine.sendNotification()` |
 | 2 | **HTTP Retry real** — flag `retry=true` só adiciona header `X-Retry-Enabled`; sem retry real no Apex para falhas transitórias | 🟠 High | `HttpRequestExecutor.execute()` |
 | 3 | **Testes do fluxo de rejeição de aprovação** — `pollApprovalStatus` rejection path não tem cobertura de testes | 🟠 High | `pflowRunner.js` |
 
