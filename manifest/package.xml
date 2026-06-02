@@ -34,6 +34,7 @@
         <members>ApprovalServiceTest</members>
         <members>ConditionEvaluator</members>
         <members>ConditionEvaluatorTest</members>
+        <members>ExecutionCleanupJob</members>
         <members>HttpCalloutMock</members>
         <members>HttpMockCallout</members>
         <members>HttpRequestExecutor</members>
@@ -42,6 +43,7 @@
         <members>ProcessBuilderControllerTest</members>
         <members>ProcessExecutionEngine</members>
         <members>ProcessExecutionEngineTest</members>
+        <members>ProcessFlowJsonUtil</members>
         <members>ProcessPicklistProvider</members>
         <members>ProcessRunnerController</members>
         <members>ProcessRunnerControllerTest</members>
