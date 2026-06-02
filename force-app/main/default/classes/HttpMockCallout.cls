@@ -1,9 +1,9 @@
 @IsTest
-global class HttpCalloutMock implements System.HttpCalloutMock {
+global class HttpMockCallout implements System.HttpCalloutMock {
     private Integer statusCode;
     private String body;
 
-    global HttpCalloutMock(Integer statusCode, String body) {
+    global HttpMockCallout(Integer statusCode, String body) {
         this.statusCode = statusCode;
         this.body = body;
     }

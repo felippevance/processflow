@@ -24,7 +24,7 @@ private class HttpRequestExecutorTest {
     @IsTest
     static void testSuccessfulPost_mapsBodyAndResponse() {
         String responseBody = '{"id":"EXT-001","status":"created"}';
-        Test.setMock(HttpCalloutMock.class, new HttpCalloutMock(200, responseBody));
+        Test.setMock(HttpCalloutMock.class, new HttpMockCallout(200, responseBody));
 
         List<Map<String,String>> bodyMappings = new List<Map<String,String>>{
             new Map<String,String>{'jsonKey'=>'name','processField'=>'FirstName'},
@@ -48,7 +48,7 @@ private class HttpRequestExecutorTest {
 
     @IsTest
     static void testRetryFlag_addsHeader() {
-        Test.setMock(HttpCalloutMock.class, new HttpCalloutMock(200, '{"ok":true}'));
+        Test.setMock(HttpCalloutMock.class, new HttpMockCallout(200, '{"ok":true}'));
 
         String config = makeConfig('My_API', 'GET', '/v1/ping',
             new List<Map<String,String>>(),
@@ -64,7 +64,7 @@ private class HttpRequestExecutorTest {
 
     @IsTest
     static void testFailure_stopBehavior_throwsException() {
-        Test.setMock(HttpCalloutMock.class, new HttpCalloutMock(500, '{"error":"internal"}'));
+        Test.setMock(HttpCalloutMock.class, new HttpMockCallout(500, '{"error":"internal"}'));
 
         String config = makeConfig('My_API', 'POST', '/v1/fail',
             new List<Map<String,String>>(),
@@ -85,7 +85,7 @@ private class HttpRequestExecutorTest {
 
     @IsTest
     static void testFailure_continueBehavior_noException() {
-        Test.setMock(HttpCalloutMock.class, new HttpCalloutMock(404, '{"error":"not found"}'));
+        Test.setMock(HttpCalloutMock.class, new HttpMockCallout(404, '{"error":"not found"}'));
 
         String config = makeConfig('My_API', 'GET', '/v1/missing',
             new List<Map<String,String>>(),
@@ -108,7 +108,7 @@ private class HttpRequestExecutorTest {
 
     @IsTest
     static void testBodyMappings_buildsJsonFromFieldValues() {
-        Test.setMock(HttpCalloutMock.class, new HttpCalloutMock(201, '{}'));
+        Test.setMock(HttpCalloutMock.class, new HttpMockCallout(201, '{}'));
 
         List<Map<String,String>> bodyMappings = new List<Map<String,String>>{
             new Map<String,String>{'jsonKey'=>'email','processField'=>'Email'},
