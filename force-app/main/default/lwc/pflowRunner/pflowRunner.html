@@ -71,12 +71,20 @@
                         <p>{currentNotificationMessage}</p>
                     </div>
                 </template>
+
+                <!-- HTTP Request preview -->
+                <template if:true={isHttpStep}>
+                    <div class="slds-box slds-theme_shade slds-m-vertical_small">
+                        <p class="slds-text-title_caps">HTTP Request</p>
+                        <p class="slds-text-body_small slds-text-color_weak">This step will call an external API. Click Next to execute.</p>
+                    </div>
+                </template>
             </div>
 
             <div slot="footer" class="slds-m-around_small">
                 <template if:true={isExecuting}>
                     <lightning-spinner alternative-text="Processing..." size="small" class="slds-m-right_small"></lightning-spinner>
-                    <span class="slds-text-body_small slds-text-color_weak">Processing...</span>
+                    <span class="slds-text-body_small slds-text-color_weak">{executingLabel}</span>
                 </template>
                 <template if:false={isExecuting}>
                     <lightning-button label="Back" onclick={goBackStep} disabled={isFirstStep} class="slds-m-right_small"></lightning-button>

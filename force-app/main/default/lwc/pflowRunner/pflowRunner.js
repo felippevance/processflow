@@ -131,6 +131,8 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         return this.currentStepIndex === this.currentSteps.length - 1;
     }
     get isNotificationStep() { return this.currentStepType === 'Notification'; }
+    get isHttpStep()         { return this.currentStepType === 'HTTP Request'; }
+    get executingLabel()     { return this.isHttpStep ? 'Calling external API...' : 'Processing...'; }
     get hasCreatedRecords()  { return this.createdRecords.length > 0; }
 
     get currentNotificationMessage() {
@@ -142,7 +144,7 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     }
 
     get currentFields() {
-        if (!this.currentStep?.FieldsConfig__c || this.isNotificationStep) return [];
+        if (!this.currentStep?.FieldsConfig__c || this.isNotificationStep || this.isHttpStep) return [];
         try {
             const raw = JSON.parse(this.currentStep.FieldsConfig__c);
             const fields = Array.isArray(raw) ? raw : (raw.fields || []);
