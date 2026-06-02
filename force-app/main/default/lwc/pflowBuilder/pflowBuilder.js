@@ -4,6 +4,7 @@ import saveProcess from '@salesforce/apex/ProcessBuilderController.saveProcess';
 import getObjectFields from '@salesforce/apex/ProcessBuilderController.getObjectFields';
 import getRecordTypes from '@salesforce/apex/ProcessBuilderController.getRecordTypes';
 import getNamedCredentials from '@salesforce/apex/ProcessBuilderController.getNamedCredentials';
+import getApprovalProcesses from '@salesforce/apex/ProcessBuilderController.getApprovalProcesses';
 
 export default class PflowBuilder extends LightningElement {
     @track currentScreen = 1;
@@ -32,6 +33,13 @@ export default class PflowBuilder extends LightningElement {
         { label: 'Stop process',          value: 'stop'     },
         { label: 'Continue to next step', value: 'continue' }
     ];
+
+    onRejectionOptions = [
+        { label: 'Stop Process',   value: 'Stop'          },
+        { label: 'Execute Stage',  value: 'Execute Stage' }
+    ];
+
+    @track approvalProcessOptions = [];
 
     @track namedCredentialOptions = [];
 
@@ -171,7 +179,7 @@ export default class PflowBuilder extends LightningElement {
         const stageIdx = parseInt(e.currentTarget.dataset.stageIdx, 10);
         this.stages = this.stages.map((s, i) => {
             if (i !== stageIdx) return s;
-            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', showObjectPicker: false, showNotificationConfig: false, showHttpConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false, httpNamedCredential: '', httpMethod: 'POST', httpPath: '', httpHeaders: [], httpBodyMappings: [], httpResponseMappings: [], httpTimeout: 30, httpRetry: false, httpOnFailure: 'stop' }] };
+            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', showObjectPicker: false, showNotificationConfig: false, showHttpConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false, httpNamedCredential: '', httpMethod: 'POST', httpPath: '', httpHeaders: [], httpBodyMappings: [], httpResponseMappings: [], httpTimeout: 30, httpRetry: false, httpOnFailure: 'stop', requiresApproval: false, approvalProcessName: '', onRejection: 'Stop', rejectionStageId: '', showRejectionStage: false }] };
         });
     }
     handleStepName(e) {
@@ -288,6 +296,58 @@ export default class PflowBuilder extends LightningElement {
         const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
         this.stages = this.stages.map((s, i) => i !== si ? s : {
             ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, httpRetry: e.target.checked })
+        });
+    }
+
+    get stageOptions() {
+        return this.stages.map(s => ({ label: s.name || 'Unnamed', value: String(s.id) }));
+    }
+
+    handleRequiresApproval(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const checked = e.target.checked;
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, requiresApproval: checked })
+        });
+        if (checked && this.approvalProcessOptions.length === 0) {
+            this.loadApprovalProcesses();
+        }
+    }
+
+    async loadApprovalProcesses() {
+        try {
+            const procs = await getApprovalProcesses();
+            this.approvalProcessOptions = procs;
+        } catch (err) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Error', message: err.body?.message || 'Failed to load approval processes', variant: 'error' }));
+        }
+    }
+
+    handleApprovalProcess(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, approvalProcessName: e.detail.value })
+        });
+    }
+
+    handleOnRejection(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const val = e.detail.value;
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, onRejection: val, showRejectionStage: val === 'Execute Stage'
+            })
+        });
+    }
+
+    handleRejectionStage(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, rejectionStageId: e.detail.value })
         });
     }
 
@@ -492,7 +552,11 @@ export default class PflowBuilder extends LightningElement {
                                     onFailure:        st.httpOnFailure || 'stop'
                                 })
                                 : JSON.stringify({
-                                    recordTypeId: st.recordTypeId || null,
+                                    recordTypeId:        st.recordTypeId        || null,
+                                    requiresApproval:    st.requiresApproval    || false,
+                                    approvalProcessName: st.approvalProcessName || null,
+                                    onRejection:         st.onRejection         || 'Stop',
+                                    rejectionStageId:    st.rejectionStageId    || null,
                                     fields: st.selectedFields.map(f => {
                                         const meta = st.fieldMeta?.[f] || {};
                                         return {

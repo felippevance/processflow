@@ -171,6 +171,50 @@
                                             onchange={handleRecordType}>
                                         </lightning-combobox>
                                     </template>
+                                        <!-- Approval Panel -->
+                                        <div class="slds-m-top_small slds-box slds-box_x-small slds-theme_shade">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Requires Approval before advancing"
+                                                checked={step.requiresApproval}
+                                                data-stage-idx={stageIdx}
+                                                data-step-idx={stepIdx}
+                                                onchange={handleRequiresApproval}>
+                                            </lightning-input>
+                                            <template if:true={step.requiresApproval}>
+                                                <lightning-combobox
+                                                    label="Approval Process"
+                                                    value={step.approvalProcessName}
+                                                    options={approvalProcessOptions}
+                                                    placeholder="-- Select --"
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    onchange={handleApprovalProcess}
+                                                    class="slds-m-top_x-small">
+                                                </lightning-combobox>
+                                                <lightning-combobox
+                                                    label="On Rejection"
+                                                    value={step.onRejection}
+                                                    options={onRejectionOptions}
+                                                    data-stage-idx={stageIdx}
+                                                    data-step-idx={stepIdx}
+                                                    onchange={handleOnRejection}
+                                                    class="slds-m-top_x-small">
+                                                </lightning-combobox>
+                                                <template if:true={step.showRejectionStage}>
+                                                    <lightning-combobox
+                                                        label="Rejection Stage"
+                                                        value={step.rejectionStageId}
+                                                        options={stageOptions}
+                                                        placeholder="-- Select Stage --"
+                                                        data-stage-idx={stageIdx}
+                                                        data-step-idx={stepIdx}
+                                                        onchange={handleRejectionStage}
+                                                        class="slds-m-top_x-small">
+                                                    </lightning-combobox>
+                                                </template>
+                                            </template>
+                                        </div>
                                 </template>
                                 <template if:true={step.showNotificationConfig}>
                                     <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate}></lightning-textarea>
