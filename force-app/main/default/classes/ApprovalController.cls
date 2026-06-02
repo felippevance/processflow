@@ -35,10 +35,18 @@ public with sharing class ApprovalController {
 
         if (String.isNotBlank(exec.PendingApprovalId__c)) {
             try {
-                Approval.ProcessWorkitemRequest recallReq = new Approval.ProcessWorkitemRequest();
-                recallReq.setAction('Removed');
-                recallReq.setWorkitemId(exec.PendingApprovalId__c);
-                Approval.process(recallReq);
+                // Find the active workitem for this process instance
+                List<ProcessInstanceWorkitem> workItems = [
+                    SELECT Id FROM ProcessInstanceWorkitem
+                    WHERE ProcessInstanceId = :exec.PendingApprovalId__c
+                    LIMIT 1
+                ];
+                if (!workItems.isEmpty()) {
+                    Approval.ProcessWorkitemRequest recallReq = new Approval.ProcessWorkitemRequest();
+                    recallReq.setAction('Removed');
+                    recallReq.setWorkitemId(workItems[0].Id);
+                    Approval.process(recallReq);
+                }
             } catch (Exception e) {
                 System.debug('Could not recall approval: ' + e.getMessage());
             }

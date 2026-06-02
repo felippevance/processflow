@@ -160,6 +160,7 @@ public with sharing class ProcessExecutionEngine {
         // Strip fields the running user cannot write
         SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, new List<SObject>{ newRecord });
         List<SObject> stripped = decision.getRecords();
+        if (stripped.isEmpty()) throw new AuraHandledException('Cannot create record on ' + objectApiName + ': all fields were stripped by FLS.');
         insert stripped[0];
         return stripped[0].Id;
     }
@@ -190,7 +191,9 @@ public with sharing class ProcessExecutionEngine {
 
         // Strip fields the running user cannot update
         SObjectAccessDecision decision = Security.stripInaccessible(AccessType.UPDATABLE, new List<SObject>{ record });
-        update decision.getRecords()[0];
+        List<SObject> strippedUpdate = decision.getRecords();
+        if (strippedUpdate.isEmpty()) throw new AuraHandledException('Cannot update record on ' + objectApiName + ': all fields were stripped by FLS.');
+        update strippedUpdate[0];
     }
 
     private static void sendNotification(String fieldsConfig, Map<String, Object> inputData) {
