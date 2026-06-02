@@ -29,6 +29,9 @@
     </types>
 
     <types>
+        <members>ApprovalController</members>
+        <members>ApprovalService</members>
+        <members>ApprovalServiceTest</members>
         <members>ConditionEvaluator</members>
         <members>ConditionEvaluatorTest</members>
         <members>HttpCalloutMock</members>
@@ -83,6 +86,12 @@
         <members>Execution__c.TargetRecordId__c</members>
         <members>Execution__c.CompletedAt__c</members>
         <members>Execution__c.FinalStatus__c</members>
+        <members>Execution__c.PendingApprovalId__c</members>
+        <members>Execution__c.PendingApprovalRecordId__c</members>
+        <members>Step__c.RequiresApproval__c</members>
+        <members>Step__c.ApprovalProcessName__c</members>
+        <members>Step__c.OnRejection__c</members>
+        <members>Step__c.RejectionStageId__c</members>
         <name>CustomField</name>
     </types>
 

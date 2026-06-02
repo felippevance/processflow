@@ -26,6 +26,7 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 - **Record Type Support** — select the record type for each Create/Update step
 - **Conditional Branching** — configure conditions on each stage so the Runner automatically skips stages whose conditions are not met, enabling dynamic process paths based on user input or records created during the process
 - **HTTP/REST Step Type** — configure REST API calls via Named Credentials with field-to-JSON body mapping, response mapping back into process data, retry flag for middleware, and configurable failure behavior (stop or continue)
+- **Approval Step** — mark any Create Record step as requiring approval; configure the native Salesforce Approval Process to use, and what to do on rejection (stop the process or navigate to a rejection stage)
 - **Process Versioning** — create new versions of a process while existing executions continue running on the previous version
 - **Process Viewer** — read-only visualization of any process flow, including conditions per stage
 
@@ -354,7 +355,7 @@ Importing to target org...
 - [x] HTTP/REST step type — call external APIs pre-configured by admins
 
 ### In progress / Next
-- [ ] **Approval step type** — native Salesforce approval process integration
+- [x] **Approval step type** — native Salesforce approval process integration
 - [x] **Rollback + Execution history** — stage-scoped rollback on failure; execution history preserved with FinalStatus; pflowHistory shows executions with expandable step logs
 - [x] **Concurrent execution control** — same user cannot run the same process for the same record simultaneously; each user gets independent executions
 - [ ] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
