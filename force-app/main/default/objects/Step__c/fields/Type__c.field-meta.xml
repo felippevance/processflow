@@ -9,6 +9,7 @@
             <value><fullName>Create Record</fullName><default>false</default><label>Create Record</label></value>
             <value><fullName>Update Record</fullName><default>false</default><label>Update Record</label></value>
             <value><fullName>Notification</fullName><default>false</default><label>Notification</label></value>
+            <value><fullName>HTTP Request</fullName><default>false</default><label>HTTP Request</label></value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
