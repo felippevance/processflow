@@ -101,6 +101,11 @@
     <!-- Field Access: Process__c -->
     <fieldPermissions>
         <editable>true</editable>
+        <field>Process__c.ExternalId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Process__c.Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -123,11 +128,21 @@
     <!-- Field Access: Stage__c -->
     <fieldPermissions>
         <editable>true</editable>
+        <field>Stage__c.ExternalId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Stage__c.Sequence__c</field>
         <readable>true</readable>
     </fieldPermissions>
 
     <!-- Field Access: Step__c -->
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.ExternalId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>Step__c.Sequence__c</field>
