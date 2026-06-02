@@ -349,12 +349,18 @@ Importing to target org...
 
 ## Roadmap
 
+### Done
 - [x] Conditional branching — skip stages based on field values or record state
-- [ ] Approval step type — native Salesforce approval process integration
 - [x] HTTP/REST step type — call external APIs pre-configured by admins
-- [ ] Rollback on failure — undo previously created records if a step fails
-- [ ] Execution history UI — replay or re-run failed processes
-- [ ] AppExchange packaging — managed package with `pflow` namespace
+
+### In progress / Next
+- [ ] **Approval step type** — native Salesforce approval process integration
+- [ ] **Rollback + Execution history** — undo created records on failure; replay or re-run failed processes from history; `ExecutionLog__c` surfaced interactively in pflowHistory
+- [ ] **Concurrent execution control** — prevent two users from overwriting `ExecutionData__c` simultaneously when running the same process
+- [ ] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
+
+### Future
+- [ ] **AppExchange packaging** — managed package with `pflow` namespace, security review, free listing
 
 ---
 
