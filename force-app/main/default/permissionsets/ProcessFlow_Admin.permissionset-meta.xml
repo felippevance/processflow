@@ -215,6 +215,21 @@
         <field>Execution__c.ExecutionData__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Execution__c.TargetRecordId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Execution__c.CompletedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Execution__c.FinalStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 
     <!-- Field Access: ExecutionLog__c -->
     <fieldPermissions>
