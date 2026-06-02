@@ -1,6 +1,35 @@
 <template>
     <lightning-card title={processName} icon-name="utility:flow">
 
+        <!-- Inline Resume Prompt -->
+        <template if:true={showResumePrompt}>
+            <div class="slds-m-around_medium slds-box slds-theme_shade">
+                <div class="slds-media slds-media_center">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="utility:clock" size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <p class="slds-text-body_regular">
+                            <strong>You have a process in progress.</strong><br/>
+                            Do you want to continue where you left off or start over?
+                        </p>
+                        <div class="slds-m-top_small">
+                            <lightning-button
+                                label="Continue"
+                                variant="brand"
+                                onclick={handleResume}
+                                class="slds-m-right_small">
+                            </lightning-button>
+                            <lightning-button
+                                label="Start New"
+                                onclick={handleStartNew}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
         <!-- Process Selection -->
         <template if:true={showProcessList}>
             <div class="slds-m-around_medium">

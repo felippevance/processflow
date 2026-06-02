@@ -3,6 +3,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { NavigationMixin } from 'lightning/navigation';
 import getActiveProcesses         from '@salesforce/apex/ProcessRunnerController.getActiveProcesses';
 import getOpenExecution           from '@salesforce/apex/ProcessRunnerController.getOpenExecution';
+import getOpenExecutionForProcess from '@salesforce/apex/ProcessRunnerController.getOpenExecutionForProcess';
 import startExecution             from '@salesforce/apex/ProcessRunnerController.startExecution';
 import getProcessSteps            from '@salesforce/apex/ProcessRunnerController.getProcessSteps';
 import executeStep                from '@salesforce/apex/ProcessRunnerController.executeStep';
@@ -37,6 +38,8 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     @track createdRecords    = [];
     @track isExecuting       = false;
     @track stepError         = null;
+    @track showResumePrompt  = false;
+    @track resumeExecution   = null;
     @track isWaitingApproval         = false;
     @track approvalOnRejection       = 'Stop';
     @track approvalRejectionStageId  = null;
@@ -56,10 +59,16 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         if (this._initialized) return;
         this._initialized = true;
         try {
-            // Always cancel any open execution before starting fresh
-            const openExec = await getOpenExecution();
+            // Check for in-progress execution for this specific process
+            const openExec = this._processId
+                ? await getOpenExecutionForProcess({ processId: this._processId })
+                : await getOpenExecution();
+
             if (openExec) {
-                try { await cancelExecution({ executionId: openExec.Id }); } catch(e) {}
+                // Show inline resume prompt instead of auto-cancelling
+                this.resumeExecution  = openExec;
+                this.showResumePrompt = true;
+                return;
             }
 
             if (this._processId) {
@@ -89,6 +98,44 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
             await this.loadStepsAndContinue(processId, null);
         } catch (err) {
             this.showToast('Error', err.body?.message || 'Failed to start process', 'error');
+        }
+    }
+
+    async handleResume() {
+        this.showResumePrompt = false;
+        const exec = this.resumeExecution;
+        this.executionId = exec.Id;
+
+        // Restore fieldValues from ExecutionData__c
+        try {
+            const execData = JSON.parse(exec.ExecutionData__c || '{}');
+            this.fieldValues = execData.fieldValues || {};
+        } catch(e) {
+            this.fieldValues = {};
+        }
+
+        // If useRecordId, also seed recordId
+        if (this.useRecordId && this.recordId) {
+            this.fieldValues = { ...this.fieldValues, recordId: this.recordId };
+        }
+
+        await this.loadStepsAndContinue(exec.Process__c, exec.CurrentStep__c);
+        this.resumeExecution = null;
+    }
+
+    async handleStartNew() {
+        this.showResumePrompt = false;
+        const oldExecId = this.resumeExecution?.Id;
+        this.resumeExecution = null;
+        if (oldExecId) {
+            try { await cancelExecution({ executionId: oldExecId }); } catch(e) {}
+        }
+        if (this._processId) {
+            await this.startFresh(this._processId);
+        } else {
+            const processes = await getActiveProcesses();
+            this.activeProcesses = processes;
+            this.showProcessList = true;
         }
     }
 
@@ -434,6 +481,8 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         this.showSuccess     = false;
         this.showExecution   = false;
         this.showProcessList = false;
+        this.showResumePrompt  = false;
+        this.resumeExecution   = null;
         this.stagesWithSteps = [];
         this.executionId     = null;
         this.fieldValues     = {};
