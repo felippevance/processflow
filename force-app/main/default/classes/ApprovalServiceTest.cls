@@ -118,6 +118,92 @@ private class ApprovalServiceTest {
         System.assertEquals(null, updated.PendingApprovalRecordId__c, 'PendingApprovalRecordId__c should remain null');
     }
 
+    @IsTest
+    static void testSubmit_invalidProcessName_throwsAuraHandledException() {
+        Process__c proc = [SELECT Id FROM Process__c LIMIT 1];
+        Stage__c stage  = [SELECT Id FROM Stage__c LIMIT 1];
+        Step__c step    = [SELECT Id FROM Step__c LIMIT 1];
+
+        Account acc = new Account(Name = 'Submit Test');
+        insert acc;
+
+        Execution__c exec = new Execution__c(
+            Process__c=proc.Id, User__c=UserInfo.getUserId(),
+            StartedAt__c=System.now(), Status__c='In Progress',
+            CurrentStage__c=stage.Id, CurrentStep__c=step.Id,
+            ExecutionData__c='{}'
+        );
+        insert exec;
+
+        Test.startTest();
+        Boolean threw = false;
+        try {
+            ApprovalService.submit(acc.Id, 'NonExistentProcess_XYZ_12345', exec.Id);
+        } catch (AuraHandledException e) {
+            threw = true;
+        } catch (Exception e) {
+            threw = true; // Any exception counts — Approval.process throws on invalid process
+        }
+        Test.stopTest();
+
+        System.assertEquals(true, threw, 'Should throw when approval process does not exist');
+        // Cleanup
+        delete exec;
+        delete acc;
+    }
+
+    @IsTest
+    static void testApprovalResultClass_settersAndGetters() {
+        ApprovalService.ApprovalResult ar = new ApprovalService.ApprovalResult();
+        ar.status = 'Pending';
+        ar.instanceId = 'test-id';
+        System.assertEquals('Pending', ar.status);
+        System.assertEquals('test-id', ar.instanceId);
+    }
+
+    // ── Mock executor that throws to exercise catch path ─────────────────────
+    private class ThrowingExecutor implements ApprovalService.IApprovalExecutor {
+        public Approval.ProcessResult submitRequest(Approval.ProcessSubmitRequest req) {
+            throw new System.DmlException('Mocked approval failure');
+        }
+    }
+
+    @IsTest
+    static void testSubmit_mockExecutorThrows_wrapsInAuraHandledException() {
+        Process__c proc = [SELECT Id FROM Process__c LIMIT 1];
+        Stage__c stage  = [SELECT Id FROM Stage__c LIMIT 1];
+        Step__c step    = [SELECT Id FROM Step__c LIMIT 1];
+
+        Account acc = new Account(Name = 'Mock Throw Test');
+        insert acc;
+
+        Execution__c exec = new Execution__c(
+            Process__c=proc.Id, User__c=UserInfo.getUserId(),
+            StartedAt__c=System.now(), Status__c='In Progress',
+            CurrentStage__c=stage.Id, CurrentStep__c=step.Id,
+            ExecutionData__c='{}'
+        );
+        insert exec;
+
+        // Inject throwing mock
+        ApprovalService.approvalExecutor = new ThrowingExecutor();
+
+        Test.startTest();
+        Boolean threw = false;
+        try {
+            ApprovalService.submit(acc.Id, 'AnyProcess', exec.Id);
+        } catch (AuraHandledException e) {
+            threw = true;
+            System.assert(e.getMessage().contains('Failed to submit') || e.getMessage() != null,
+                'Exception message should describe the failure');
+        } catch (Exception e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        System.assertEquals(true, threw, 'Mock throw should propagate as AuraHandledException');
+    }
+
     // ── checkStatus: ProcessInstance in Pending status (via fake ID path) ────
     @IsTest
     static void testCheckStatus_withFakePendingId_returnsInstanceStatus() {

@@ -1,5 +1,21 @@
 public with sharing class ApprovalService {
 
+    // ── Approval process executor — injectable for testing ──────────────────
+    public interface IApprovalExecutor {
+        Approval.ProcessResult submitRequest(Approval.ProcessSubmitRequest req);
+    }
+
+    private class DefaultApprovalExecutor implements IApprovalExecutor {
+        public Approval.ProcessResult submitRequest(Approval.ProcessSubmitRequest req) {
+            return Approval.process(req);
+        }
+    }
+
+    @TestVisible
+    private static IApprovalExecutor approvalExecutor = new DefaultApprovalExecutor();
+
+    // ────────────────────────────────────────────────────────────────────────
+
     public class ApprovalResult {
         @AuraEnabled public String status     { get; set; }
         @AuraEnabled public String instanceId { get; set; }
@@ -13,7 +29,7 @@ public with sharing class ApprovalService {
 
         Approval.ProcessResult result;
         try {
-            result = Approval.process(req);
+            result = approvalExecutor.submitRequest(req);
         } catch (Exception e) {
             throw new AuraHandledException('Failed to submit record for approval: ' + e.getMessage());
         }

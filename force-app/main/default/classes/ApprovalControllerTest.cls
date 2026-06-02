@@ -169,6 +169,33 @@ private class ApprovalControllerTest {
     }
 
     @IsTest
+    static void testCancelApproval_withInvalidPendingId_noThrow() {
+        Process__c proc = [SELECT Id FROM Process__c LIMIT 1];
+        Stage__c stage  = [SELECT Id FROM Stage__c LIMIT 1];
+        Step__c step    = [SELECT Id FROM Step__c LIMIT 1];
+
+        Execution__c exec = new Execution__c(
+            Process__c=proc.Id, User__c=UserInfo.getUserId(),
+            StartedAt__c=System.now(), Status__c='In Progress',
+            CurrentStage__c=stage.Id, CurrentStep__c=step.Id,
+            ExecutionData__c='{}',
+            PendingApprovalId__c='04ig000000000001AA'
+        );
+        insert exec;
+
+        Test.startTest();
+        Boolean threw = false;
+        try {
+            ApprovalController.cancelApproval(exec.Id);
+        } catch(Exception e) { threw = true; }
+        Test.stopTest();
+
+        System.assertEquals(false, threw, 'Should not throw on invalid workitem recall');
+        Execution__c updated = [SELECT FinalStatus__c FROM Execution__c WHERE Id = :exec.Id];
+        System.assertEquals('Cancelled', updated.FinalStatus__c);
+    }
+
+    @IsTest
     static void testCancelApproval_clears_PendingApprovalRecordId() {
         Process__c proc = [SELECT Id FROM Process__c LIMIT 1];
         Stage__c stage  = [SELECT Id FROM Stage__c LIMIT 1];

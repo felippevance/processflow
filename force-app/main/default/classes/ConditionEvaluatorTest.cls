@@ -79,6 +79,57 @@ private class ConditionEvaluatorTest {
     }
 
     @IsTest
+    static void testMalformedJson_returnsTrue() {
+        // Malformed JSON should not block execution
+        Boolean result = ConditionEvaluator.evaluate('not-valid-json', 'AND', '{}');
+        System.assertEquals(true, result, 'Malformed JSON should return true (allow execution)');
+    }
+
+    @IsTest
+    static void testUnknownSource_returnsTrue() {
+        String conditionsJson = '[{"source":"unknownSource","field":"X","operator":"equals","value":"Y"}]';
+        String ctx = makeContext(new Map<String,String>{'X'=>'Y'}, new Map<String,Map<String,String>>());
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ctx));
+    }
+
+    @IsTest
+    static void testUnknownOperator_returnsTrue() {
+        String conditionsJson = '[{"source":"fieldValue","field":"X","operator":"contains","value":"Y"}]';
+        String ctx = makeContext(new Map<String,String>{'X'=>'Y'}, new Map<String,Map<String,String>>());
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ctx));
+    }
+
+    @IsTest
+    static void testNullValue_handledGracefully() {
+        String conditionsJson = '[{"source":"fieldValue","field":"Missing","operator":"is_empty","value":""}]';
+        String ctx = makeContext(new Map<String,String>(), new Map<String,Map<String,String>>());
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ctx));
+    }
+
+    @IsTest
+    static void testBlankExecutionData_usesEmptyMaps() {
+        // executionDataJson is blank — exercises the isBlank branch (line 16)
+        String conditionsJson = '[{"source":"fieldValue","field":"X","operator":"is_empty","value":""}]';
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ''));
+    }
+
+    @IsTest
+    static void testMissingFieldValuesKey_usesEmptyMap() {
+        // executionDataJson has no "fieldValues" key — exercises line 21 fallback
+        String conditionsJson = '[{"source":"fieldValue","field":"X","operator":"is_empty","value":""}]';
+        String ctx = '{"createdRecords":{}}';
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ctx));
+    }
+
+    @IsTest
+    static void testMissingCreatedRecordsKey_usesEmptyMap() {
+        // executionDataJson has no "createdRecords" key — exercises line 25 fallback
+        String conditionsJson = '[{"source":"createdRecord","stepName":"Step1","field":"X","operator":"is_empty","value":""}]';
+        String ctx = '{"fieldValues":{}}';
+        System.assertEquals(true, ConditionEvaluator.evaluate(conditionsJson, 'AND', ctx));
+    }
+
+    @IsTest
     static void testCreatedRecord_equals() {
         Map<String,Map<String,String>> cr = new Map<String,Map<String,String>>{
             'Criar Case' => new Map<String,String>{'Status'=>'New'}
