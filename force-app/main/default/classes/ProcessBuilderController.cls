@@ -70,6 +70,27 @@ public with sharing class ProcessBuilderController {
         return result;
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getNamedCredentials() {
+        List<Map<String, String>> result = new List<Map<String, String>>();
+        try {
+            List<NamedCredential> creds = [
+                SELECT Id, DeveloperName, MasterLabel
+                FROM NamedCredential
+                ORDER BY MasterLabel
+            ];
+            for (NamedCredential nc : creds) {
+                result.add(new Map<String, String>{
+                    'value' => nc.DeveloperName,
+                    'label' => nc.MasterLabel
+                });
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException('Error loading Named Credentials: ' + e.getMessage());
+        }
+        return result;
+    }
+
     private static void validatePayload(Map<String, Object> payload) {
         String name = (String) payload.get('name');
         if (String.isBlank(name)) throw new AuraHandledException('Process name is required.');
