@@ -24,8 +24,9 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 - **Visual Process Builder** — 4-screen wizard to create processes with stages, steps, fields, and record types
 - **Dynamic Field Picker** — loads fields from any Salesforce object via metadata API; filters out system fields automatically
 - **Record Type Support** — select the record type for each Create/Update step
+- **Conditional Branching** — configure conditions on each stage so the Runner automatically skips stages whose conditions are not met, enabling dynamic process paths based on user input or records created during the process
 - **Process Versioning** — create new versions of a process while existing executions continue running on the previous version
-- **Process Viewer** — read-only visualization of any process flow
+- **Process Viewer** — read-only visualization of any process flow, including conditions per stage
 
 ### For Business Users
 - **Step-by-step execution** — guided form-based interface with progress bar
@@ -151,6 +152,26 @@ sf org assign permset --name ProcessFlow_Admin --target-org my-org
 3. Fill in the fields for each step and click **Next**
 4. On the last step, click **Finish**
 5. The success screen shows links to all records created during the process
+
+### Conditional Branching (Admin)
+
+Stages can be configured with conditions so the Runner skips them automatically when conditions are not met.
+
+1. In the **Process Builder**, go to Screen 2 (Stages)
+2. Click the **filter icon** next to a stage name to open the conditions panel
+3. Set the **Condition Logic**: `AND` (all conditions must match) or `OR` (any condition matches)
+4. Add one or more conditions:
+   - **Source**: `Field value` (entered by the user during execution) or `Created record field` (a field on a record created in a previous step)
+   - **Field API Name**: the field to evaluate (e.g. `Priority`, `Status`)
+   - **Operator**: `equals`, `not equals`, `is empty`, `is not empty`
+   - **Value**: the value to compare against (hidden for `is empty` / `is not empty`)
+5. Stages without conditions always execute
+
+**Example:** Stage 2 only runs if the user entered `Priority = High` in a previous step. If Priority is Low, the Runner skips Stage 2 and jumps directly to Stage 3.
+
+> The **pflowViewer** component on a `Process__c` record page shows each stage's conditions as inline badges.
+
+---
 
 ### Versioning a Process (Admin)
 
@@ -311,7 +332,7 @@ Importing to target org...
 
 ## Roadmap
 
-- [ ] Conditional branching — skip stages based on field values or record state
+- [x] Conditional branching — skip stages based on field values or record state
 - [ ] Approval step type — native Salesforce approval process integration
 - [ ] HTTP/REST step type — call external APIs pre-configured by admins
 - [ ] Rollback on failure — undo previously created records if a step fails
