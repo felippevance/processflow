@@ -368,7 +368,7 @@ Importing to target org...
 - [x] **Approval step type** — native Salesforce approval process integration
 - [x] **Rollback + Execution history** — stage-scoped rollback on failure; execution history preserved with FinalStatus; pflowHistory shows executions with expandable step logs
 - [x] **Concurrent execution control** — same user cannot run the same process for the same record simultaneously; each user gets independent executions
-- [ ] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
+- [x] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
 
 ### Architecture improvements (completed)
 - [x] Security hardening — `stripInaccessible` output validation, approval workitem fix, `targetRecordId` access check
