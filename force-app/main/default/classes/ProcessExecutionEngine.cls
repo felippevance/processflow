@@ -47,7 +47,12 @@ public with sharing class ProcessExecutionEngine {
         Boolean isLastStep = inputData.containsKey('isLastStep') && (Boolean) inputData.get('isLastStep');
 
         if (isLastStep) {
-            delete new Execution__c(Id = executionId);
+            Execution__c completed = new Execution__c(
+                Id             = executionId,
+                FinalStatus__c = 'Completed',
+                CompletedAt__c = System.now()
+            );
+            update completed;
         } else {
             Execution__c existing = [
                 SELECT Id, ExecutionData__c FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED
