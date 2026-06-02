@@ -199,11 +199,28 @@ public with sharing class ProcessExecutionEngine {
 
     private static void sendNotification(String fieldsConfig, Map<String, Object> inputData) {
         Map<String, Object> config = (Map<String, Object>) JSON.deserializeUntyped(fieldsConfig);
-        String message = String.escapeSingleQuotes((String) config.get('messageTemplate'));
+        String rawMessage = (String) config.get('messageTemplate');
+        // Strip HTML tags and sanitize to prevent XSS in Chatter
+        String message = sanitizeMessage(rawMessage);
         Id recipientId = inputData.containsKey('recipientId')
             ? (Id) inputData.get('recipientId')
             : UserInfo.getUserId();
         ConnectApi.ChatterFeeds.postFeedElement(null, recipientId, ConnectApi.FeedElementType.FeedItem, message);
+    }
+
+    private static String sanitizeMessage(String input) {
+        if (String.isBlank(input)) return '';
+        // Remove HTML tags
+        String sanitized = input.replaceAll('<[^>]+>', '');
+        // Decode common HTML entities to plain text
+        sanitized = sanitized.replace('&amp;',  '&')
+                             .replace('&lt;',   '<')
+                             .replace('&gt;',   '>')
+                             .replace('&quot;', '"')
+                             .replace('&#39;',  '\'')
+                             .replace('&nbsp;', ' ');
+        // Trim and limit length to prevent overflow
+        return sanitized.trim().left(1000);
     }
 
     private static Object coerceValue(Object value, String fieldType) {
