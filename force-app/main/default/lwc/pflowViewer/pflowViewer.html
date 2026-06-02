@@ -62,6 +62,9 @@
                                         <p class="slds-text-body_small slds-text-color_default"><strong>{step.Name}</strong></p>
                                     </div>
                                     <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">{step.typeLabel}</p>
+                                    <template if:true={step.requiresApproval}>
+                                        <lightning-badge label="⏳ Approval Required" class="slds-m-top_xx-small"></lightning-badge>
+                                    </template>
                                     <template if:true={step.targetObjectName}>
                                         <p class="slds-text-body_small slds-text-color_weak">Object: {step.targetObjectName}</p>
                                     </template>

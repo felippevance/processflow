@@ -68,7 +68,8 @@ export default class PflowViewer extends LightningElement {
                             typeIcon:        TYPE_ICONS[st.Type__c] || 'utility:flow',
                             typeLabel:       TYPE_LABELS[st.Type__c] || st.Type__c,
                             targetObjectName,
-                            fieldCount:      fieldCount || null
+                            fieldCount:      fieldCount || null,
+                            requiresApproval: st.RequiresApproval__c || false
                         };
                     })
                 };
