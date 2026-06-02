@@ -39,6 +39,11 @@ export default class PflowBuilder extends LightningElement {
         { label: 'Execute Stage',  value: 'Execute Stage' }
     ];
 
+    notificationChannelOptions = [
+        { label: 'Chatter (default)', value: 'chatter' },
+        { label: 'Email',             value: 'email'   }
+    ];
+
     @track approvalProcessOptions = [];
 
     @track namedCredentialOptions = [];
@@ -179,7 +184,7 @@ export default class PflowBuilder extends LightningElement {
         const stageIdx = parseInt(e.currentTarget.dataset.stageIdx, 10);
         this.stages = this.stages.map((s, i) => {
             if (i !== stageIdx) return s;
-            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', showObjectPicker: false, showNotificationConfig: false, showHttpConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false, httpNamedCredential: '', httpMethod: 'POST', httpPath: '', httpHeaders: [], httpBodyMappings: [], httpResponseMappings: [], httpTimeout: 30, httpRetry: false, httpOnFailure: 'stop', requiresApproval: false, approvalProcessName: '', onRejection: 'Stop', rejectionStageId: '', showRejectionStage: false }] };
+            return { ...s, steps: [...s.steps, { id: Date.now(), name: '', sequence: s.steps.length + 1, type: '', targetObject: '', fieldOptions: [], fieldMeta: {}, hasFieldOptions: false, selectedFields: [], messageTemplate: '', notificationChannel: 'chatter', notificationEmail: '', showEmailField: false, showObjectPicker: false, showNotificationConfig: false, showHttpConfig: false, recordTypeId: null, recordTypeOptions: [], hasRecordTypes: false, httpNamedCredential: '', httpMethod: 'POST', httpPath: '', httpHeaders: [], httpBodyMappings: [], httpResponseMappings: [], httpTimeout: 30, httpRetry: false, httpOnFailure: 'stop', requiresApproval: false, approvalProcessName: '', onRejection: 'Stop', rejectionStageId: '', showRejectionStage: false }] };
         });
     }
     handleStepName(e) {
@@ -270,6 +275,25 @@ export default class PflowBuilder extends LightningElement {
         const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
         const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
         this.stages = this.stages.map((s, i) => i !== si ? s : { ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, messageTemplate: e.target.value }) });
+    }
+
+    handleNotificationChannel(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        const ch = e.detail.value;
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : {
+                ...st, notificationChannel: ch, showEmailField: ch === 'email'
+            })
+        });
+    }
+
+    handleNotificationEmail(e) {
+        const si = parseInt(e.currentTarget.dataset.stageIdx, 10);
+        const pi = parseInt(e.currentTarget.dataset.stepIdx, 10);
+        this.stages = this.stages.map((s, i) => i !== si ? s : {
+            ...s, steps: s.steps.map((st, j) => j !== pi ? st : { ...st, notificationEmail: e.target.value })
+        });
     }
 
     async loadNamedCredentials() {
@@ -538,7 +562,11 @@ export default class PflowBuilder extends LightningElement {
                         type: st.type,
                         targetObject: st.targetObject || null,
                         fieldsConfig: st.type === 'Notification'
-                            ? JSON.stringify({ messageTemplate: st.messageTemplate })
+                            ? JSON.stringify({
+                                messageTemplate: st.messageTemplate,
+                                channel:         st.notificationChannel || 'chatter',
+                                recipientEmail:  st.notificationEmail   || null
+                              })
                             : st.type === 'HTTP Request'
                                 ? JSON.stringify({
                                     namedCredential:  st.httpNamedCredential,

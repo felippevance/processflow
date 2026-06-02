@@ -200,12 +200,34 @@ public with sharing class ProcessExecutionEngine {
     private static void sendNotification(String fieldsConfig, Map<String, Object> inputData) {
         Map<String, Object> config = (Map<String, Object>) JSON.deserializeUntyped(fieldsConfig);
         String rawMessage = (String) config.get('messageTemplate');
-        // Strip HTML tags and sanitize to prevent XSS in Chatter
-        String message = sanitizeMessage(rawMessage);
-        Id recipientId = inputData.containsKey('recipientId')
-            ? (Id) inputData.get('recipientId')
-            : UserInfo.getUserId();
-        ConnectApi.ChatterFeeds.postFeedElement(null, recipientId, ConnectApi.FeedElementType.FeedItem, message);
+        String message    = sanitizeMessage(rawMessage);
+        String channel    = config.containsKey('channel') ? (String) config.get('channel') : 'chatter';
+
+        if (channel == 'email') {
+            String recipientEmail = (String) config.get('recipientEmail');
+            // Fall back to user's email if no static email configured
+            if (String.isBlank(recipientEmail) && inputData.containsKey('recipientId')) {
+                Id recipientId = (Id) inputData.get('recipientId');
+                List<User> users = [SELECT Email FROM User WHERE Id = :recipientId LIMIT 1];
+                if (!users.isEmpty()) recipientEmail = users[0].Email;
+            }
+            if (String.isBlank(recipientEmail)) {
+                recipientEmail = UserInfo.getUserEmail();
+            }
+
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setToAddresses(new List<String>{ recipientEmail });
+            email.setSubject('ProcessFlow Notification');
+            email.setPlainTextBody(message);
+            email.setSaveAsActivity(false);
+            Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ email });
+        } else {
+            // Default: Chatter
+            Id recipientId = inputData.containsKey('recipientId')
+                ? (Id) inputData.get('recipientId')
+                : UserInfo.getUserId();
+            ConnectApi.ChatterFeeds.postFeedElement(null, recipientId, ConnectApi.FeedElementType.FeedItem, message);
+        }
     }
 
     private static String sanitizeMessage(String input) {

@@ -218,6 +218,26 @@
                                 </template>
                                 <template if:true={step.showNotificationConfig}>
                                     <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate}></lightning-textarea>
+                                    <lightning-combobox
+                                        label="Channel"
+                                        value={step.notificationChannel}
+                                        options={notificationChannelOptions}
+                                        data-stage-idx={stageIdx}
+                                        data-step-idx={stepIdx}
+                                        onchange={handleNotificationChannel}
+                                        class="slds-m-top_x-small">
+                                    </lightning-combobox>
+                                    <template if:true={step.showEmailField}>
+                                        <lightning-input
+                                            type="email"
+                                            label="Recipient Email (leave blank to use current user)"
+                                            value={step.notificationEmail}
+                                            data-stage-idx={stageIdx}
+                                            data-step-idx={stepIdx}
+                                            onchange={handleNotificationEmail}
+                                            class="slds-m-top_x-small">
+                                        </lightning-input>
+                                    </template>
                                 </template>
                                 <template if:true={step.showHttpConfig}>
                                     <div class="slds-box slds-theme_shade slds-m-top_small">
