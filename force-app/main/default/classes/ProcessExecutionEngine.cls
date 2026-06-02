@@ -40,12 +40,40 @@ public with sharing class ProcessExecutionEngine {
         if (isLastStep) {
             delete new Execution__c(Id = executionId);
         } else {
-            Execution__c exec = new Execution__c(
-                Id = executionId,
-                CurrentStep__c = stepId,
-                ExecutionData__c = JSON.serialize(inputData)
-            );
-            update exec;
+            Execution__c existing = [
+                SELECT Id, ExecutionData__c FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED
+            ];
+            Map<String, Object> execData = String.isBlank(existing.ExecutionData__c)
+                ? new Map<String, Object>()
+                : (Map<String, Object>) JSON.deserializeUntyped(existing.ExecutionData__c);
+
+            // Merge fieldValues from current step input
+            Map<String, Object> fieldValues = execData.containsKey('fieldValues')
+                ? (Map<String, Object>) execData.get('fieldValues')
+                : new Map<String, Object>();
+            for (String k : inputData.keySet()) {
+                if (k != 'isLastStep' && k != 'recordId') fieldValues.put(k, inputData.get(k));
+            }
+            execData.put('fieldValues', fieldValues);
+
+            // If a record was created, snapshot input fields under stepId for condition evaluation
+            if (result.createdRecordId != null) {
+                Map<String, Object> createdRecords = execData.containsKey('createdRecords')
+                    ? (Map<String, Object>) execData.get('createdRecords')
+                    : new Map<String, Object>();
+                Map<String, Object> snapshot = new Map<String, Object>();
+                for (String k : inputData.keySet()) {
+                    if (k != 'isLastStep' && k != 'recordId') snapshot.put(k, inputData.get(k));
+                }
+                snapshot.put('__id', result.createdRecordId);
+                snapshot.put('__objectType', result.createdObjectType);
+                createdRecords.put(String.valueOf(stepId), snapshot);
+                execData.put('createdRecords', createdRecords);
+            }
+
+            existing.CurrentStep__c = stepId;
+            existing.ExecutionData__c = JSON.serialize(execData);
+            update existing;
         }
 
         return result;
