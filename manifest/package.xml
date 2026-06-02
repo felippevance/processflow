@@ -46,6 +46,8 @@
         <members>ProcessExecutionEngineTest</members>
         <members>ProcessFlowJsonUtil</members>
         <members>ProcessPicklistProvider</members>
+        <members>ProcessFlowRestApiV1</members>
+        <members>ProcessFlowRestApiV1Test</members>
         <members>ProcessRunnerController</members>
         <members>ProcessRunnerControllerTest</members>
         <members>ProcessViewerController</members>
