@@ -358,6 +358,67 @@ Importing to target org...
 
 ---
 
+## REST API
+
+ProcessFlow exposes a REST API for external integrations — trigger processes from webhooks, external systems, CI pipelines, or Apex code.
+
+**Base URL:** `/services/apexrest/processflow/v1/`
+
+**Authentication:** Salesforce Connected App + OAuth 2.0
+
+**Response format:** Always HTTP 200. Status in body.
+
+```json
+{ "status": "success|failed|completed|pending_approval|cancelled", "data": {...}, "error": "..." }
+```
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/processes` | List all active processes |
+| `POST` | `/processes/{externalId}/execute` | Start a new execution |
+| `GET` | `/executions/{id}/status` | Check execution status and current step |
+| `POST` | `/executions/{id}/step` | Advance the current step (with optional field values) |
+| `DELETE` | `/executions/{id}` | Cancel an execution |
+
+### Examples
+
+**List processes:**
+```bash
+curl -H "Authorization: Bearer {token}" \
+  https://yourorg.salesforce.com/services/apexrest/processflow/v1/processes
+```
+
+**Start execution:**
+```bash
+curl -X POST -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"targetRecordId": "001..."}' \
+  https://yourorg.salesforce.com/services/apexrest/processflow/v1/processes/F92FD63A-PROC-onboarding-v1/execute
+# → {"status":"success","data":{"executionId":"a2s...","status":"in_progress"}}
+```
+
+**Advance a step:**
+```bash
+curl -X POST -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"Subject": "API Case", "Priority": "High"}' \
+  https://yourorg.salesforce.com/services/apexrest/processflow/v1/executions/a2s.../step
+# → {"status":"success","data":{"stepName":"Create Case","createdRecordId":"500..."}}
+```
+
+**Check status:**
+```bash
+curl -H "Authorization: Bearer {token}" \
+  https://yourorg.salesforce.com/services/apexrest/processflow/v1/executions/a2s.../status
+# → {"status":"success","data":{"status":"in_progress","currentStage":"Intake","currentStep":"Fill Form"}}
+```
+
+> Processes are identified by `ExternalId__c` (e.g. `F92FD63A-PROC-onboarding-v1`) — the same ID used in the migration script. Caller field values override step `defaultValues`; missing fields use defaults.
+
+---
+
 ## Roadmap
 
 ### Done
@@ -393,7 +454,7 @@ Importing to target org...
 These gaps are documented Salesforce platform limitations, not code quality issues. The aggregate namespace coverage exceeds the AppExchange minimum of 75%.
 
 ### Future
-- [ ] **REST API** — `@RestResource` endpoints to start/check/advance processes programmatically (webhooks, integrations, CI testing)
+- [x] **REST API** — `@RestResource` endpoints to start/check/advance/cancel processes programmatically
 - [ ] **AppExchange packaging** — managed package with `pflow` namespace, security review, free listing
 
 ---
