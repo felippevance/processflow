@@ -30,6 +30,7 @@
 
     <types>
         <members>ApprovalController</members>
+        <members>ApprovalControllerTest</members>
         <members>ApprovalService</members>
         <members>ApprovalServiceTest</members>
         <members>ConditionEvaluator</members>
