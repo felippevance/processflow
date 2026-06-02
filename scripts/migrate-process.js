@@ -7,7 +7,7 @@
  * Usage:
  *   node migrate-process.js                                         # interactive
  *   node migrate-process.js --config migration.json                 # config file
- *   node migrate-process.js --from org1 --to org2 --process "Name" # CLI flags
+ *   node migrate-process.js --from org1 --to org2 --process "F92FD63A-PROC-..." # CLI flags
  */
 
 const { execSync, spawnSync } = require('child_process');
@@ -81,7 +81,7 @@ function sfUpsert(records, sobject, externalIdField, org) {
 }
 
 // ─── Core migration logic ─────────────────────────────────────────────────────
-async function migrate(fromOrg, toOrg, processNames) {
+async function migrate(fromOrg, toOrg, processExternalIds) {
     header('ProcessFlow Migration');
     separator();
 
@@ -99,9 +99,9 @@ async function migrate(fromOrg, toOrg, processNames) {
 
     // 2. Load processes
     log('\nLoading processes from source org...');
-    const nameFilter = processNames.map(n => `'${n.replace(/'/g, "\\'")}'`).join(',');
+    const idFilter = processExternalIds.map(id => `'${id.replace(/'/g, "\\'")}'`).join(',');
     const processes = sfQuery(
-        `SELECT Id, Name, ExternalId__c, Description__c, IsActive__c, Version__c, IsCurrentVersion__c FROM Process__c WHERE Name IN (${nameFilter})`,
+        `SELECT Id, Name, ExternalId__c, Description__c, IsActive__c, Version__c, IsCurrentVersion__c FROM Process__c WHERE ExternalId__c IN (${idFilter})`,
         fromOrg
     );
 
@@ -200,7 +200,7 @@ async function interactiveMode() {
     let allProcesses;
     try {
         allProcesses = sfQuery(
-            'SELECT Name, Version__c, IsCurrentVersion__c FROM Process__c WHERE IsActive__c = true ORDER BY Name',
+            'SELECT Name, ExternalId__c, Version__c, IsCurrentVersion__c FROM Process__c WHERE IsActive__c = true ORDER BY Name',
             fromOrg
         );
     } catch (e) {
@@ -216,7 +216,7 @@ async function interactiveMode() {
     log(`\n  Available processes:\n`);
     allProcesses.forEach((p, i) => {
         const current = p.IsCurrentVersion__c ? ` ${c.green}(current)${c.reset}` : c.dim + ' (old version)' + c.reset;
-        log(`  ${c.cyan}[${i + 1}]${c.reset} ${p.Name} v${p.Version__c}${current}`);
+        log(`  ${c.cyan}[${i + 1}]${c.reset} ${p.Name} v${p.Version__c}${current}\n        ${c.dim}${p.ExternalId__c}${c.reset}`);
     });
 
     const selection = (await ask(`\n  Select processes (e.g. 1,3 or "all"): `)).trim();
@@ -224,12 +224,12 @@ async function interactiveMode() {
 
     let selected;
     if (selection.toLowerCase() === 'all') {
-        selected = allProcesses.map(p => p.Name);
+        selected = allProcesses.map(p => p.ExternalId__c);
     } else {
         const indices = selection.split(',').map(s => parseInt(s.trim()) - 1);
         selected = indices
             .filter(i => i >= 0 && i < allProcesses.length)
-            .map(i => allProcesses[i].Name);
+            .map(i => allProcesses[i].ExternalId__c);
     }
 
     if (selected.length === 0) { error('No valid processes selected.'); process.exit(1); }
@@ -263,17 +263,17 @@ async function cliMode(args) {
 
     const fromOrg  = get('--from');
     const toOrg    = get('--to');
-    const processes = getAll('--process');
+    const processExternalIds = getAll('--process');
 
-    if (!fromOrg || !toOrg || processes.length === 0) {
+    if (!fromOrg || !toOrg || processExternalIds.length === 0) {
         log(`\n${c.bold}Usage:${c.reset}`);
         log(`  ${c.cyan}node migrate-process.js${c.reset}                                            ${c.dim}# interactive${c.reset}`);
         log(`  ${c.cyan}node migrate-process.js --config migration.json${c.reset}                    ${c.dim}# config file${c.reset}`);
-        log(`  ${c.cyan}node migrate-process.js --from ORG --to ORG --process "Name"${c.reset}       ${c.dim}# CLI flags${c.reset}\n`);
+        log(`  ${c.cyan}node migrate-process.js --from ORG --to ORG --process "F92FD63A-PROC-..."${c.reset}  ${c.dim}# CLI flags${c.reset}\n`);
         process.exit(1);
     }
 
-    await migrate(fromOrg, toOrg, processes);
+    await migrate(fromOrg, toOrg, processExternalIds);
 }
 
 // ─── Entry point ─────────────────────────────────────────────────────────────

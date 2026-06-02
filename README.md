@@ -224,7 +224,7 @@ The `scripts/migrate-process.js` script handles the full export → import flow.
 node scripts/migrate-process.js
 ```
 
-Lists all active processes in the source org and lets you choose which ones to migrate:
+Lists all active processes in the source org — showing name, version and `ExternalId__c` — and lets you choose which ones to migrate:
 
 ```
   Available processes:
@@ -244,8 +244,8 @@ Create or edit `scripts/migration.json`:
   "from": "source-org-alias",
   "to": "target-org-alias",
   "processes": [
-    "Onboarding de Novo Funcionário",
-    "Abertura de Chamado"
+    "F92FD63A-PROC-onboarding-de-novo-funcionario-v1",
+    "A1B2C3D4-PROC-abertura-de-chamado-v1"
   ]
 }
 ```
@@ -258,14 +258,19 @@ node scripts/migrate-process.js --config scripts/migration.json
 
 > Tip: create a `scripts/migration.local.json` (already in `.gitignore`) for per-developer overrides without polluting the repo.
 
+> To find the `ExternalId__c` of a process, go to the Process list view in Salesforce or run:
+> ```bash
+> sf data query --query "SELECT Name, ExternalId__c, Version__c FROM Process__c WHERE IsActive__c = true ORDER BY Name" --target-org your-org
+> ```
+
 #### Mode 3 — CLI flags (for CI/CD pipelines)
 
 ```bash
 node scripts/migrate-process.js \
   --from source-org \
   --to target-org \
-  --process "Onboarding de Novo Funcionário" \
-  --process "Abertura de Chamado"
+  --process "F92FD63A-PROC-onboarding-de-novo-funcionario-v1" \
+  --process "A1B2C3D4-PROC-abertura-de-chamado-v1"
 ```
 
 #### Example output
@@ -296,7 +301,7 @@ Importing to target org...
 
 ### How it works
 
-1. Exports `Process__c`, `Stage__c` and `Step__c` records from the source org
+1. Locates processes by `ExternalId__c` and exports `Process__c`, `Stage__c` and `Step__c` records from the source org
 2. Strips internal Salesforce IDs and maps parent relationships via `ExternalId__c`
 3. Upserts all records to the target org — safe to run multiple times (idempotent)
 

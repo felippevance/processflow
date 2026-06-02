@@ -2,7 +2,7 @@
   "from": "source-org-alias",
   "to": "target-org-alias",
   "processes": [
-    "Onboarding de Novo Funcionário",
-    "Abertura de Chamado"
+    "XXXXXXXX-PROC-nome-do-processo-v1",
+    "YYYYYYYY-PROC-outro-processo-v1"
   ]
 }
