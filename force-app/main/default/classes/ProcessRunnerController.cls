@@ -24,7 +24,7 @@ public with sharing class ProcessRunnerController {
                    ExecutionData__c
             FROM Execution__c
             WHERE User__c = :UserInfo.getUserId()
-              AND Status__c = 'In Progress'
+              AND FinalStatus__c = null
             WITH SECURITY_ENFORCED
             ORDER BY StartedAt__c DESC
             LIMIT 1
@@ -40,7 +40,7 @@ public with sharing class ProcessRunnerController {
                    ExecutionData__c
             FROM Execution__c
             WHERE User__c = :UserInfo.getUserId()
-              AND Status__c = 'In Progress'
+              AND FinalStatus__c = null
               AND Process__c = :processId
             WITH SECURITY_ENFORCED
             ORDER BY StartedAt__c DESC
@@ -50,7 +50,24 @@ public with sharing class ProcessRunnerController {
     }
 
     @AuraEnabled
-    public static Execution__c startExecution(Id processId) {
+    public static Execution__c startExecution(Id processId, String targetRecordId) {
+        // Concurrent execution check
+        List<Execution__c> existing = [
+            SELECT Id FROM Execution__c
+            WHERE Process__c = :processId
+              AND User__c = :UserInfo.getUserId()
+              AND FinalStatus__c = null
+              AND TargetRecordId__c = :targetRecordId
+            WITH SECURITY_ENFORCED
+            LIMIT 1
+        ];
+        if (!existing.isEmpty()) {
+            throw new AuraHandledException(
+                'A process execution is already in progress' +
+                (String.isNotBlank(targetRecordId) ? ' for this record.' : '.')
+            );
+        }
+
         Stage__c firstStage = [
             SELECT Id FROM Stage__c
             WHERE Process__c = :processId
@@ -67,13 +84,14 @@ public with sharing class ProcessRunnerController {
         ];
 
         Execution__c exec = new Execution__c(
-            Process__c       = processId,
-            User__c          = UserInfo.getUserId(),
-            StartedAt__c     = System.now(),
-            Status__c        = 'In Progress',
-            CurrentStage__c  = firstStage.Id,
-            CurrentStep__c   = firstStep.Id,
-            ExecutionData__c = '{}'
+            Process__c        = processId,
+            User__c           = UserInfo.getUserId(),
+            StartedAt__c      = System.now(),
+            Status__c         = 'In Progress',
+            CurrentStage__c   = firstStage.Id,
+            CurrentStep__c    = firstStep.Id,
+            TargetRecordId__c = targetRecordId,
+            ExecutionData__c  = '{}'
         );
         insert exec;
         return exec;
@@ -175,8 +193,10 @@ public with sharing class ProcessRunnerController {
             }
         }
 
-        // No more stages pass — process complete, delete execution
-        delete exec;
+        // No more stages pass — process complete
+        exec.FinalStatus__c = 'Completed';
+        exec.CompletedAt__c = System.now();
+        update exec;
         NextStageResult res = new NextStageResult();
         res.processComplete = true;
         return res;
@@ -200,8 +220,14 @@ public with sharing class ProcessRunnerController {
             result = ProcessExecutionEngine.executeWithData(stepId, stepType, targetObject, safeFieldsConfig, inputData, executionId);
         } catch (Exception e) {
             errorMsg = e.getMessage();
-            // Log the error before re-throwing
             writeLog(executionId, stepId, 'Error', safeInputJson, errorMsg);
+            // Rollback records created in the current stage
+            try {
+                Step__c failedStep = [SELECT Stage__c FROM Step__c WHERE Id = :stepId WITH SECURITY_ENFORCED];
+                RollbackService.rollbackStage(executionId, failedStep.Stage__c);
+            } catch (Exception rollbackEx) {
+                System.debug('Rollback failed: ' + rollbackEx.getMessage());
+            }
             throw new AuraHandledException(e.getMessage());
         }
 
@@ -242,8 +268,37 @@ public with sharing class ProcessRunnerController {
     }
 
     @AuraEnabled
+    public static List<Execution__c> getExecutionHistory(Id processId) {
+        return [
+            SELECT Id, Name, FinalStatus__c, StartedAt__c, CompletedAt__c,
+                   TargetRecordId__c, User__r.Name
+            FROM Execution__c
+            WHERE Process__c = :processId
+              AND FinalStatus__c != null
+            WITH SECURITY_ENFORCED
+            ORDER BY StartedAt__c DESC
+            LIMIT 100
+        ];
+    }
+
+    @AuraEnabled
+    public static List<ExecutionLog__c> getLogsForExecution(Id executionId) {
+        return [
+            SELECT Id, Step__r.Name, Status__c, ExecutedAt__c, ErrorMessage__c
+            FROM ExecutionLog__c
+            WHERE Execution__c = :executionId
+            WITH SECURITY_ENFORCED
+            ORDER BY ExecutedAt__c ASC
+        ];
+    }
+
+    @AuraEnabled
     public static void cancelExecution(Id executionId) {
-        Execution__c exec = [SELECT Id FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED];
-        delete exec;
+        Execution__c exec = [
+            SELECT Id FROM Execution__c WHERE Id = :executionId WITH SECURITY_ENFORCED
+        ];
+        exec.FinalStatus__c = 'Cancelled';
+        exec.CompletedAt__c = System.now();
+        update exec;
     }
 }
