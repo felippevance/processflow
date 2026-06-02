@@ -20,6 +20,7 @@ global class ExecutionCleanupJob implements Schedulable {
             SELECT Id FROM Execution__c
             WHERE FinalStatus__c != null
               AND CompletedAt__c < :cutoff
+            WITH SECURITY_ENFORCED
             LIMIT 200
         ];
 
@@ -30,6 +31,7 @@ global class ExecutionCleanupJob implements Schedulable {
         List<ExecutionLog__c> logsToDelete = [
             SELECT Id FROM ExecutionLog__c
             WHERE Execution__c IN :execIds
+            WITH SECURITY_ENFORCED
         ];
         if (!logsToDelete.isEmpty()) {
             Database.delete(logsToDelete, false);

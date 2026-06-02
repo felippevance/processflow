@@ -10,7 +10,20 @@ public with sharing class ApprovalService {
         req.setObjectId(recordId);
         req.setProcessDefinitionNameOrId(approvalProcessName);
         req.setSubmitterId(UserInfo.getUserId());
-        Approval.ProcessResult result = Approval.process(req);
+
+        Approval.ProcessResult result;
+        try {
+            result = Approval.process(req);
+        } catch (Exception e) {
+            throw new AuraHandledException('Failed to submit record for approval: ' + e.getMessage());
+        }
+        if (result != null && !result.isSuccess()) {
+            List<String> errors = new List<String>();
+            for (Database.Error err : result.getErrors()) {
+                errors.add(err.getMessage());
+            }
+            throw new AuraHandledException('Approval submission failed: ' + String.join(errors, '; '));
+        }
 
         Execution__c exec = new Execution__c(
             Id                         = executionId,
@@ -29,6 +42,7 @@ public with sharing class ApprovalService {
         Execution__c exec = [
             SELECT PendingApprovalId__c, PendingApprovalRecordId__c
             FROM Execution__c WHERE Id = :executionId
+            WITH SECURITY_ENFORCED
         ];
 
         ApprovalResult ar = new ApprovalResult();

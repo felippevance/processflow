@@ -77,6 +77,7 @@ public with sharing class ProcessBuilderController {
             List<NamedCredential> creds = [
                 SELECT Id, DeveloperName, MasterLabel
                 FROM NamedCredential
+                WITH SECURITY_ENFORCED
                 ORDER BY MasterLabel
             ];
             for (NamedCredential nc : creds) {
