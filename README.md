@@ -355,8 +355,8 @@ Importing to target org...
 
 ### In progress / Next
 - [ ] **Approval step type** — native Salesforce approval process integration
-- [ ] **Rollback + Execution history** — undo created records on failure; replay or re-run failed processes from history; `ExecutionLog__c` surfaced interactively in pflowHistory
-- [ ] **Concurrent execution control** — prevent two users from overwriting `ExecutionData__c` simultaneously when running the same process
+- [x] **Rollback + Execution history** — stage-scoped rollback on failure; execution history preserved with FinalStatus; pflowHistory shows executions with expandable step logs
+- [x] **Concurrent execution control** — same user cannot run the same process for the same record simultaneously; each user gets independent executions
 - [ ] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
 
 ### Future
