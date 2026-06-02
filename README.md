@@ -40,7 +40,10 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 
 ### Platform
 - **Execution Logging** — every step execution logged to `ExecutionLog__c` with status, input data, and error messages
-- **FLS/CRUD enforcement** — `Security.stripInaccessible()` ensures field-level security is respected on all DML operations
+- **FLS/CRUD enforcement** — `Security.stripInaccessible()` with output validation ensures field-level security on all DML
+- **Atomic rollback** — stage-scoped rollback uses `Database.setSavepoint()` for transactional safety on failures
+- **Execution history** — completed/failed executions preserved with `FinalStatus__c`; viewable in pflowHistory with expandable step logs
+- **Scheduled cleanup** — `ExecutionCleanupJob` automatically archives executions older than 90 days
 - **Console App** — dedicated Lightning Console App with tabs for all objects
 - **Permission Sets** — `ProcessFlow_Admin` and `ProcessFlow_User` for role-based access
 
@@ -95,11 +98,18 @@ ExecutionLog__c (audit trail — persisted)
 
 | Class | Role |
 |-------|------|
-| `ProcessBuilderController` | Saves processes, loads object fields + picklist values + record types |
-| `ProcessRunnerController` | Manages execution lifecycle, step execution, logs |
-| `ProcessExecutionEngine` | Executes each step type with FLS enforcement and type coercion |
+| `ProcessBuilderController` | Saves processes, loads object fields + picklist values + record types + approval processes |
+| `ProcessRunnerController` | Manages execution lifecycle, step execution, history, concurrent control |
+| `ProcessExecutionEngine` | Executes each step type with FLS enforcement, type coercion, approval submit |
 | `ProcessViewerController` | Loads process details for the Viewer LWC |
 | `ProcessPicklistProvider` | Dynamic picklist for App Builder — shows process names instead of IDs |
+| `ApprovalService` | Submit records to native Salesforce Approval Processes; check status; clear pending |
+| `ApprovalController` | AuraEnabled wrappers for approval operations and process listing |
+| `RollbackService` | Stage-scoped rollback — deletes records created in the failed stage |
+| `ConditionEvaluator` | Evaluates AND/OR stage conditions against execution context |
+| `HttpRequestExecutor` | HTTP callouts via Named Credentials with body/response field mapping |
+| `ExecutionCleanupJob` | Scheduled job — archives `Execution__c` records older than 90 days |
+| `ProcessFlowJsonUtil` | Shared JSON utilities with documented schemas for FieldsConfig and ExecutionData |
 
 ---
 
@@ -359,6 +369,12 @@ Importing to target org...
 - [x] **Rollback + Execution history** — stage-scoped rollback on failure; execution history preserved with FinalStatus; pflowHistory shows executions with expandable step logs
 - [x] **Concurrent execution control** — same user cannot run the same process for the same record simultaneously; each user gets independent executions
 - [ ] **Builder validation** — block saving processes with stages that have no steps; require Named Credential on HTTP Request steps before save
+
+### Architecture improvements (completed)
+- [x] Security hardening — `stripInaccessible` output validation, approval workitem fix, `targetRecordId` access check
+- [x] Performance — N+1 eliminated in `getNextStage`, batch step loading, JSON versioning with `_v` field
+- [x] Reliability — `Database.setSavepoint()` rollback, `disconnectedCallback` polling cleanup, error boundaries
+- [x] Operational — `ExecutionCleanupJob` scheduler, `ProcessFlowJsonUtil` with documented JSON schemas
 
 ### Future
 - [ ] **AppExchange packaging** — managed package with `pflow` namespace, security review, free listing
