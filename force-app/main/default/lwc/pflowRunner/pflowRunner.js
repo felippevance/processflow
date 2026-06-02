@@ -7,6 +7,7 @@ import startExecution             from '@salesforce/apex/ProcessRunnerController
 import getProcessSteps            from '@salesforce/apex/ProcessRunnerController.getProcessSteps';
 import executeStep                from '@salesforce/apex/ProcessRunnerController.executeStep';
 import cancelExecution            from '@salesforce/apex/ProcessRunnerController.cancelExecution';
+import getNextStage               from '@salesforce/apex/ProcessRunnerController.getNextStage';
 
 export default class PflowRunner extends NavigationMixin(LightningElement) {
 
@@ -127,8 +128,7 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
 
     get isFirstStep() { return this.currentStageIndex === 0 && this.currentStepIndex === 0; }
     get isLastStep() {
-        return this.currentStageIndex === this.stagesWithSteps.length - 1 &&
-               this.currentStepIndex  === this.currentSteps.length - 1;
+        return this.currentStepIndex === this.currentSteps.length - 1;
     }
     get isNotificationStep() { return this.currentStepType === 'Notification'; }
     get hasCreatedRecords()  { return this.createdRecords.length > 0; }
@@ -195,15 +195,36 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         this.stepError   = null;
         try {
             await this.executeCurrentStep(false);
-            if (this.currentStepIndex < this.currentSteps.length - 1) {
+
+            const isLastStepInStage = this.currentStepIndex === this.currentSteps.length - 1;
+
+            if (!isLastStepInStage) {
+                // Still in same stage — just advance step index
                 this.currentStepIndex++;
-            } else if (this.currentStageIndex < this.stagesWithSteps.length - 1) {
-                this.currentStageIndex++;
-                this.currentStepIndex = 0;
+                this.fieldValues = {};
+            } else {
+                // Last step in this stage — ask server for next stage (evaluates conditions)
+                const result = await getNextStage({
+                    executionId:    this.executionId,
+                    currentStageId: this.currentStage.stage.Id
+                });
+
+                if (result.processComplete) {
+                    this.showExecution = false;
+                    this.showSuccess   = true;
+                } else {
+                    const newSws = { stage: result.stage, steps: result.steps };
+                    this.stagesWithSteps = [
+                        ...this.stagesWithSteps.slice(0, this.currentStageIndex + 1),
+                        newSws
+                    ];
+                    this.currentStageIndex++;
+                    this.currentStepIndex = 0;
+                    this.fieldValues = {};
+                }
             }
-            this.fieldValues = {};
         } catch(e) {
-            // error already set by executeCurrentStep — stay on current step
+            // error already set in executeCurrentStep
         } finally {
             this.isExecuting = false;
         }
@@ -224,11 +245,30 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         this.isExecuting = true;
         this.stepError   = null;
         try {
-            await this.executeCurrentStep(true);
-            this.showExecution = false;
-            this.showSuccess   = true;
+            await this.executeCurrentStep(false); // don't delete yet — getNextStage handles completion
+
+            const result = await getNextStage({
+                executionId:    this.executionId,
+                currentStageId: this.currentStage.stage.Id
+            });
+
+            if (result.processComplete) {
+                // execution already deleted by getNextStage
+                this.showExecution = false;
+                this.showSuccess   = true;
+            } else {
+                // More stages exist — continue
+                const newSws = { stage: result.stage, steps: result.steps };
+                this.stagesWithSteps = [
+                    ...this.stagesWithSteps.slice(0, this.currentStageIndex + 1),
+                    newSws
+                ];
+                this.currentStageIndex++;
+                this.currentStepIndex = 0;
+                this.fieldValues = {};
+            }
         } catch(e) {
-            // error already set by executeCurrentStep — stay on current step
+            // error already displayed by executeCurrentStep
         } finally {
             this.isExecuting = false;
         }
