@@ -160,6 +160,10 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         }
         this.currentStageIndex = 0;
         this.currentStepIndex  = 0;
+        // If resuming, position at the saved step
+        if (currentStepId) {
+            this.positionAtStep(currentStepId);
+        }
         this.showProcessList   = false;
         this.showExecution     = true;
     }
