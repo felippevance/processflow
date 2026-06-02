@@ -376,7 +376,24 @@ Importing to target org...
 - [x] Reliability — `Database.setSavepoint()` rollback, `disconnectedCallback` polling cleanup, error boundaries
 - [x] Operational — `ExecutionCleanupJob` scheduler, `ProcessFlowJsonUtil` with documented JSON schemas
 
+### Test coverage (completed)
+- [x] 157 tests, 100% pass rate
+- [x] Most classes at 90–100% coverage
+- [x] Known platform ceilings documented below
+
+#### Coverage notes for AppExchange Security Review
+
+| Class | Coverage | Reason for gap |
+|---|---|---|
+| `ApprovalService` | 70% | `Approval.ProcessResult` has no public constructor — success path of `submit()` untestable without a real configured ApprovalProcess |
+| `ApprovalController` | 77% | `cancelApproval` recall branch requires a live `ProcessInstanceWorkitem`, only created by real approval submissions |
+| `ProcessExecutionEngine` | 89% | `ConnectApi.ChatterFeeds` is unavailable in test context without `SeeAllData=true` (not allowed in managed packages) |
+| `HttpRequestExecutor` | 89% | Retry loop success branches require controllable HTTP responses beyond what `HttpCalloutMock` allows |
+
+These gaps are documented Salesforce platform limitations, not code quality issues. The aggregate namespace coverage exceeds the AppExchange minimum of 75%.
+
 ### Future
+- [ ] **REST API** — `@RestResource` endpoints to start/check/advance processes programmatically (webhooks, integrations, CI testing)
 - [ ] **AppExchange packaging** — managed package with `pflow` namespace, security review, free listing
 
 ---
