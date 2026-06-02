@@ -24,6 +24,10 @@
         <apexClass>ProcessViewerController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ExecutionCleanupJob</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
 
     <!-- Tab Visibility -->
     <tabSettings>

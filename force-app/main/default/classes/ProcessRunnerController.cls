@@ -167,6 +167,28 @@ public with sharing class ProcessRunnerController {
 
         String execData = exec.ExecutionData__c;
 
+        // Batch load all steps for all remaining stages — avoids N+1 queries
+        List<Id> remainingStageIds = new List<Id>();
+        for (Stage__c s : remainingStages) remainingStageIds.add(s.Id);
+
+        Map<Id, List<Step__c>> stepsByStage = new Map<Id, List<Step__c>>();
+        if (!remainingStageIds.isEmpty()) {
+            for (Step__c st : [
+                SELECT Id, Name, Sequence__c, Stage__c,
+                       Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
+                       RequiresApproval__c, ApprovalProcessName__c
+                FROM Step__c
+                WHERE Stage__c IN :remainingStageIds
+                WITH SECURITY_ENFORCED
+                ORDER BY Stage__r.Sequence__c ASC, Sequence__c ASC
+            ]) {
+                if (!stepsByStage.containsKey(st.Stage__c)) {
+                    stepsByStage.put(st.Stage__c, new List<Step__c>());
+                }
+                stepsByStage.get(st.Stage__c).add(st);
+            }
+        }
+
         for (Stage__c candidate : remainingStages) {
             Boolean passes = ConditionEvaluator.evaluate(
                 candidate.ConditionsConfig__c,
@@ -174,15 +196,9 @@ public with sharing class ProcessRunnerController {
                 execData
             );
             if (passes) {
-                List<Step__c> steps = [
-                    SELECT Id, Name, Sequence__c, Stage__c,
-                           Type__c, TargetObject__c, FieldsConfig__c, IsRequired__c,
-                           RequiresApproval__c, ApprovalProcessName__c
-                    FROM Step__c
-                    WHERE Stage__c = :candidate.Id
-                    WITH SECURITY_ENFORCED
-                    ORDER BY Sequence__c ASC
-                ];
+                List<Step__c> steps = stepsByStage.containsKey(candidate.Id)
+                    ? stepsByStage.get(candidate.Id)
+                    : new List<Step__c>();
                 exec.CurrentStage__c = candidate.Id;
                 exec.CurrentStep__c  = steps.isEmpty() ? null : steps[0].Id;
                 update exec;
