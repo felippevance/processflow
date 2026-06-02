@@ -178,6 +178,26 @@
         <field>Step__c.IsRequired__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.RequiresApproval__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.ApprovalProcessName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.OnRejection__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Step__c.RejectionStageId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 
     <!-- Field Access: Execution__c -->
     <fieldPermissions>
@@ -228,6 +248,16 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Execution__c.FinalStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Execution__c.PendingApprovalId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Execution__c.PendingApprovalRecordId__c</field>
         <readable>true</readable>
     </fieldPermissions>
 

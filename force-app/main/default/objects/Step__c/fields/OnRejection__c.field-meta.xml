@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>OnRejection__c</fullName>
+    <label>On Rejection</label>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Stop</fullName><default>true</default><label>Stop Process</label></value>
+            <value><fullName>Execute Stage</fullName><default>false</default><label>Execute Stage</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
