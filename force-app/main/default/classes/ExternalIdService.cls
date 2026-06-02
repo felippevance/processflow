@@ -1,5 +1,11 @@
 public with sharing class ExternalIdService {
 
+    // Prevent recursive trigger execution
+    private static Boolean triggerExecuting = false;
+
+    public static Boolean isTriggerExecuting() { return triggerExecuting; }
+    public static void setTriggerExecuting(Boolean val) { triggerExecuting = val; }
+
     // Generates an 8-char hex prefix — ~4 billion combinations, collision-proof in practice
     public static String generatePrefix() {
         return EncodingUtil.convertToHex(Crypto.generateAesKey(128)).substring(0, 8).toUpperCase();
