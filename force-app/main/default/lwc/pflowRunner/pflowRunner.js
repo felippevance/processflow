@@ -8,6 +8,8 @@ import getProcessSteps            from '@salesforce/apex/ProcessRunnerController
 import executeStep                from '@salesforce/apex/ProcessRunnerController.executeStep';
 import cancelExecution            from '@salesforce/apex/ProcessRunnerController.cancelExecution';
 import getNextStage               from '@salesforce/apex/ProcessRunnerController.getNextStage';
+import checkApprovalStatus from '@salesforce/apex/ApprovalController.checkApprovalStatus';
+import cancelApproval      from '@salesforce/apex/ApprovalController.cancelApproval';
 
 export default class PflowRunner extends NavigationMixin(LightningElement) {
 
@@ -35,6 +37,10 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
     @track createdRecords    = [];
     @track isExecuting       = false;
     @track stepError         = null;
+    @track isWaitingApproval         = false;
+    @track approvalOnRejection       = 'Stop';
+    @track approvalRejectionStageId  = null;
+    _approvalPollTimer               = null;
 
     _initialized = false;
 
@@ -312,6 +318,13 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
                 executionId:   this.executionId,
                 isLastStep:    isLast
             });
+            if (result?.isWaitingApproval) {
+                this.isWaitingApproval        = true;
+                this.approvalOnRejection      = result.onRejection      || 'Stop';
+                this.approvalRejectionStageId = result.rejectionStageId || null;
+                this.startApprovalPolling();
+                return; // do not advance — polling handles next step
+            }
             if (result?.createdRecordId) {
                 this.createdRecords = [...this.createdRecords, {
                     id:         result.createdRecordId,
@@ -336,7 +349,83 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         });
     }
 
+    startApprovalPolling() {
+        this._approvalPollTimer = setInterval(() => this.pollApprovalStatus(), 5000);
+    }
+
+    stopApprovalPolling() {
+        if (this._approvalPollTimer) {
+            clearInterval(this._approvalPollTimer);
+            this._approvalPollTimer = null;
+        }
+    }
+
+    async pollApprovalStatus() {
+        try {
+            const result = await checkApprovalStatus({ executionId: this.executionId });
+
+            if (result.status === 'Approved') {
+                this.stopApprovalPolling();
+                this.isWaitingApproval = false;
+
+                const isLastStepInStage = this.currentStepIndex === this.currentSteps.length - 1;
+                if (!isLastStepInStage) {
+                    this.currentStepIndex++;
+                    this.fieldValues = {};
+                } else {
+                    const nextResult = await getNextStage({
+                        executionId:    this.executionId,
+                        currentStageId: this.currentStage.stage.Id
+                    });
+                    if (nextResult.processComplete) {
+                        this.showExecution = false;
+                        this.showSuccess   = true;
+                    } else {
+                        const newSws = { stage: nextResult.stage, steps: nextResult.steps };
+                        this.stagesWithSteps = [...this.stagesWithSteps.slice(0, this.currentStageIndex + 1), newSws];
+                        this.currentStageIndex++;
+                        this.currentStepIndex = 0;
+                        this.fieldValues = {};
+                    }
+                }
+            } else if (result.status === 'Rejected') {
+                this.stopApprovalPolling();
+                this.isWaitingApproval = false;
+
+                if (this.approvalOnRejection === 'Execute Stage' && this.approvalRejectionStageId) {
+                    const processId = this.stagesWithSteps[0]?.stage?.Process__c ||
+                                      this.stagesWithSteps[0]?.stage?.Process__r?.Id;
+                    const allStages = await getProcessSteps({ processId });
+                    const rejStage = allStages.find(s => String(s.stage.Id) === String(this.approvalRejectionStageId));
+                    if (rejStage) {
+                        this.stagesWithSteps = [...this.stagesWithSteps.slice(0, this.currentStageIndex + 1), rejStage];
+                        this.currentStageIndex++;
+                        this.currentStepIndex = 0;
+                        this.fieldValues = {};
+                    }
+                } else {
+                    this.showExecution = false;
+                    this.stepError = 'Approval was rejected. The process has been stopped.';
+                }
+            }
+            // else still Pending — keep polling
+        } catch(e) {
+            this.stopApprovalPolling();
+            this.stepError = e.body?.message || 'Failed to check approval status';
+        }
+    }
+
+    async handleCancelApproval() {
+        this.stopApprovalPolling();
+        try {
+            await cancelApproval({ executionId: this.executionId });
+        } catch(e) { /* ignore */ }
+        this.isWaitingApproval = false;
+        this.resetRunner();
+    }
+
     resetRunner() {
+        this.stopApprovalPolling();
         this._initialized    = false;
         this.showSuccess     = false;
         this.showExecution   = false;
@@ -347,6 +436,9 @@ export default class PflowRunner extends NavigationMixin(LightningElement) {
         this.createdRecords  = [];
         this.currentStageIndex = 0;
         this.currentStepIndex  = 0;
+        this.isWaitingApproval = false;
+        this.approvalOnRejection = 'Stop';
+        this.approvalRejectionStageId = null;
         if (!this._processId) this.processName = 'Run a Process';
         this.init();
     }

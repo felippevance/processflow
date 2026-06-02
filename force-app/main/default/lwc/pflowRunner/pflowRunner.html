@@ -79,23 +79,43 @@
                         <p class="slds-text-body_small slds-text-color_weak">This step will call an external API. Click Next to execute.</p>
                     </div>
                 </template>
+
+                <!-- Awaiting Approval screen -->
+                <template if:true={isWaitingApproval}>
+                    <div class="slds-m-around_medium slds-text-align_center">
+                        <lightning-spinner alternative-text="Waiting for approval" size="medium" class="slds-m-bottom_medium"></lightning-spinner>
+                        <h2 class="slds-text-heading_small slds-m-top_medium">&#x23F3; Awaiting Approval</h2>
+                        <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
+                            The record has been submitted for approval.<br/>
+                            This page will update automatically.
+                        </p>
+                        <lightning-button
+                            label="Cancel Process"
+                            variant="destructive"
+                            onclick={handleCancelApproval}
+                            class="slds-m-top_medium">
+                        </lightning-button>
+                    </div>
+                </template>
             </div>
 
-            <div slot="footer" class="slds-m-around_small">
-                <template if:true={isExecuting}>
-                    <lightning-spinner alternative-text="Processing..." size="small" class="slds-m-right_small"></lightning-spinner>
-                    <span class="slds-text-body_small slds-text-color_weak">{executingLabel}</span>
-                </template>
-                <template if:false={isExecuting}>
-                    <lightning-button label="Back" onclick={goBackStep} disabled={isFirstStep} class="slds-m-right_small"></lightning-button>
-                    <template if:false={isLastStep}>
-                        <lightning-button variant="brand" label="Next" onclick={goNextStep}></lightning-button>
+            <template if:false={isWaitingApproval}>
+                <div slot="footer" class="slds-m-around_small">
+                    <template if:true={isExecuting}>
+                        <lightning-spinner alternative-text="Processing..." size="small" class="slds-m-right_small"></lightning-spinner>
+                        <span class="slds-text-body_small slds-text-color_weak">{executingLabel}</span>
                     </template>
-                    <template if:true={isLastStep}>
-                        <lightning-button variant="brand" label="Finish" onclick={finishProcess}></lightning-button>
+                    <template if:false={isExecuting}>
+                        <lightning-button label="Back" onclick={goBackStep} disabled={isFirstStep} class="slds-m-right_small"></lightning-button>
+                        <template if:false={isLastStep}>
+                            <lightning-button variant="brand" label="Next" onclick={goNextStep}></lightning-button>
+                        </template>
+                        <template if:true={isLastStep}>
+                            <lightning-button variant="brand" label="Finish" onclick={finishProcess}></lightning-button>
+                        </template>
                     </template>
-                </template>
-            </div>
+                </div>
+            </template>
         </template>
 
         <!-- Success Screen -->
