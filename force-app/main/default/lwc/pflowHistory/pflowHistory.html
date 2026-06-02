@@ -1,5 +1,6 @@
 <template>
     <lightning-card title="Execution History" icon-name="utility:event_ext">
+
         <template if:true={isLoading}>
             <div class="slds-m-around_medium slds-text-align_center">
                 <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
@@ -7,19 +8,52 @@
         </template>
 
         <template if:false={isLoading}>
-            <template if:true={hasLogs}>
+            <template if:true={hasExecutions}>
                 <lightning-datatable
                     key-field="Id"
-                    data={logs}
-                    columns={columns}
-                    hide-checkbox-column>
+                    data={executions}
+                    columns={executionColumns}
+                    hide-checkbox-column
+                    onrowaction={handleRowAction}>
                 </lightning-datatable>
             </template>
-            <template if:false={hasLogs}>
+            <template if:false={hasExecutions}>
                 <div class="slds-m-around_medium slds-text-align_center">
-                    <p class="slds-text-color_weak">No execution history yet.</p>
+                    <p class="slds-text-color_weak">No completed executions yet.</p>
                 </div>
             </template>
         </template>
+
+        <!-- Step logs panel -->
+        <template if:true={showStepLogs}>
+            <div class="slds-m-around_medium slds-box slds-theme_shade">
+                <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                    <p class="slds-text-title_caps">Step Logs</p>
+                    <lightning-button-icon
+                        icon-name="utility:close"
+                        size="small"
+                        onclick={closeStepLogs}
+                        alternative-text="Close">
+                    </lightning-button-icon>
+                </div>
+                <template if:true={isLoadingLogs}>
+                    <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                </template>
+                <template if:false={isLoadingLogs}>
+                    <template if:true={hasStepLogs}>
+                        <lightning-datatable
+                            key-field="Id"
+                            data={stepLogs}
+                            columns={logColumns}
+                            hide-checkbox-column>
+                        </lightning-datatable>
+                    </template>
+                    <template if:false={hasStepLogs}>
+                        <p class="slds-text-color_weak slds-m-around_small">No step logs for this execution.</p>
+                    </template>
+                </template>
+            </div>
+        </template>
+
     </lightning-card>
 </template>
