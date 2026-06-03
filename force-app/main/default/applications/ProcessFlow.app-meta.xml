@@ -1,18 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOverrides>
+        <actionName>View</actionName>
+        <comment>Action override created by Lightning App Builder during activation.</comment>
+        <content>Process_Record_Page</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+        <pageOrSobjectType>Process__c</pageOrSobjectType>
+    </actionOverrides>
     <defaultLandingTab>Process__c</defaultLandingTab>
     <description>Process Flow — Build and run internal business processes</description>
     <formFactors>Large</formFactors>
     <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
     <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>Process Flow</label>
     <navType>Console</navType>
+    <tabs>standard-home</tabs>
     <tabs>Process__c</tabs>
     <tabs>Stage__c</tabs>
     <tabs>Step__c</tabs>
     <tabs>Execution__c</tabs>
     <uiType>Lightning</uiType>
     <workspaceConfig>
+        <mappings>
+            <tab>Execution__c</tab>
+        </mappings>
         <mappings>
             <tab>Process__c</tab>
         </mappings>
@@ -23,7 +38,7 @@
             <tab>Step__c</tab>
         </mappings>
         <mappings>
-            <tab>Execution__c</tab>
+            <tab>standard-home</tab>
         </mappings>
     </workspaceConfig>
 </CustomApplication>

@@ -3,24 +3,20 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:pflowBuilder</componentName>
-                <identifier>pflowBuilder</identifier>
+                <componentName>pflowBuilder</componentName>
+                <identifier>c_pflowBuilder</identifier>
             </componentInstance>
         </itemInstances>
-        <name>region1</name>
+        <name>column1</name>
         <type>Region</type>
     </flexiPageRegions>
     <flexiPageRegions>
-        <name>region2</name>
-        <type>Region</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
-        <name>region3</name>
+        <name>column2</name>
         <type>Region</type>
     </flexiPageRegions>
     <masterLabel>Process Flow Home</masterLabel>
     <template>
-        <name>flexipage:appHomeTemplateThreeColumns</name>
+        <name>flexipage:appHomeTemplateTwoColumns</name>
     </template>
     <type>AppPage</type>
 </FlexiPage>
