@@ -70,6 +70,12 @@ export default class PflowBuilder extends LightningElement {
     get isScreen3() { return this.currentScreen === 3; }
     get isScreen4() { return this.currentScreen === 4; }
 
+    get currentScreenStr() { return String(this.currentScreen); }
+    get screenLabel() {
+        const labels = { 1: 'Process', 2: 'Stages', 3: 'Steps', 4: 'Review' };
+        return labels[this.currentScreen] || '';
+    }
+
     get stepClass1() { return this.currentScreen >= 1 ? 'slds-progress__item slds-is-active' : 'slds-progress__item'; }
     get stepClass2() { return this.currentScreen >= 2 ? 'slds-progress__item slds-is-active' : 'slds-progress__item'; }
     get stepClass3() { return this.currentScreen >= 3 ? 'slds-progress__item slds-is-active' : 'slds-progress__item'; }

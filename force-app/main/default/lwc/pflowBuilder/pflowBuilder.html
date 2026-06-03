@@ -1,21 +1,50 @@
 <template>
-    <lightning-card title="Process Builder" icon-name="utility:flow">
+    <lightning-card icon-name="utility:flow">
+        <span slot="title">
+            Process Builder
+            <lightning-badge label={screenLabel} class="slds-m-left_x-small"></lightning-badge>
+        </span>
+
         <!-- Progress Indicator -->
-        <div class="slds-progress slds-m-around_medium">
-            <ol class="slds-progress__list">
-                <li class={stepClass1}><span>Process</span></li>
-                <li class={stepClass2}><span>Stages</span></li>
-                <li class={stepClass3}><span>Steps</span></li>
-                <li class={stepClass4}><span>Review</span></li>
-            </ol>
+        <div class="slds-m-horizontal_medium slds-m-top_small slds-m-bottom_medium">
+            <lightning-progress-indicator
+                current-step={currentScreenStr}
+                type="base"
+                has-error="false">
+                <lightning-progress-step label="Process"  value="1"></lightning-progress-step>
+                <lightning-progress-step label="Stages"   value="2"></lightning-progress-step>
+                <lightning-progress-step label="Steps"    value="3"></lightning-progress-step>
+                <lightning-progress-step label="Review"   value="4"></lightning-progress-step>
+            </lightning-progress-indicator>
         </div>
 
         <!-- Screen 1: Process -->
         <template if:true={isScreen1}>
             <div class="slds-m-around_medium">
-                <lightning-input label="Process Name" value={processName} onchange={handleProcessName} required></lightning-input>
-                <lightning-textarea label="Description" value={processDescription} onchange={handleProcessDescription}></lightning-textarea>
-                <lightning-input type="checkbox" label="Active" checked={processIsActive} onchange={handleProcessActive}></lightning-input>
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
+                        <lightning-input
+                            label="Process Name"
+                            value={processName}
+                            onchange={handleProcessName}
+                            required
+                            class="slds-m-bottom_small">
+                        </lightning-input>
+                        <lightning-textarea
+                            label="Description"
+                            value={processDescription}
+                            onchange={handleProcessDescription}
+                            rows="3"
+                            class="slds-m-bottom_small">
+                        </lightning-textarea>
+                        <lightning-input
+                            type="checkbox"
+                            label="Active"
+                            checked={processIsActive}
+                            onchange={handleProcessActive}>
+                        </lightning-input>
+                    </div>
+                </div>
             </div>
         </template>
 
@@ -23,15 +52,17 @@
         <template if:true={isScreen2}>
             <div class="slds-m-around_medium">
                 <template for:each={stages} for:item="stage" for:index="idx">
-                    <div key={stage.id} class="slds-box slds-m-bottom_small">
+                    <div key={stage.id} class="slds-box slds-m-bottom_small slds-box_x-small">
                         <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small">
-                            <lightning-input
-                                label="Stage Name"
-                                value={stage.name}
-                                data-idx={idx}
-                                onchange={handleStageName}
-                                class="slds-col">
-                            </lightning-input>
+                            <div class="slds-col">
+                                <lightning-input
+                                    label="Stage Name"
+                                    value={stage.name}
+                                    data-idx={idx}
+                                    onchange={handleStageName}
+                                    variant="label-inline">
+                                </lightning-input>
+                            </div>
                             <lightning-button-icon
                                 icon-name="utility:filterList"
                                 variant="border"
@@ -43,6 +74,7 @@
                             </lightning-button-icon>
                             <lightning-button-icon
                                 icon-name="utility:delete"
+                                variant="border-error"
                                 data-idx={idx}
                                 onclick={removeStage}
                                 alternative-text="Remove"
@@ -52,92 +84,51 @@
 
                         <!-- Conditions Panel -->
                         <template if:true={stage.showConditions}>
-                            <div class="slds-box slds-theme_shade slds-m-top_small">
-                                <p class="slds-text-title_caps slds-m-bottom_small">Stage Conditions</p>
+                            <div class="slds-box slds-theme_shade slds-m-top_small slds-box_x-small">
+                                <p class="slds-text-title_caps slds-m-bottom_small">
+                                    <lightning-icon icon-name="utility:filter" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                                    Stage Conditions
+                                </p>
                                 <lightning-combobox
-                                    label="Condition Logic"
+                                    label="Logic"
                                     value={stage.conditionLogic}
                                     options={conditionLogicOptions}
                                     data-idx={idx}
-                                    onchange={handleConditionLogic}>
+                                    onchange={handleConditionLogic}
+                                    class="slds-m-bottom_small">
                                 </lightning-combobox>
                                 <template for:each={stage.conditions} for:item="cond" for:index="condIdx">
-                                    <div key={cond.id} class="slds-grid slds-grid_vertical-align-end slds-m-top_x-small slds-gutters_x-small">
+                                    <div key={cond.id} class="slds-grid slds-grid_vertical-align-end slds-m-bottom_x-small slds-gutters_x-small">
                                         <div class="slds-col slds-size_2-of-12">
-                                            <lightning-combobox
-                                                label="Source"
-                                                value={cond.source}
-                                                options={conditionSourceOptions}
-                                                data-idx={idx}
-                                                data-cond-idx={condIdx}
-                                                onchange={handleConditionSource}>
-                                            </lightning-combobox>
+                                            <lightning-combobox label="Source" value={cond.source} options={conditionSourceOptions} data-idx={idx} data-cond-idx={condIdx} onchange={handleConditionSource}></lightning-combobox>
                                         </div>
                                         <template if:true={cond.isCreatedRecord}>
                                             <div class="slds-col slds-size_2-of-12">
-                                                <lightning-input
-                                                    label="Step Name"
-                                                    value={cond.stepName}
-                                                    data-idx={idx}
-                                                    data-cond-idx={condIdx}
-                                                    onchange={handleConditionStepName}>
-                                                </lightning-input>
+                                                <lightning-input label="Step Name" value={cond.stepName} data-idx={idx} data-cond-idx={condIdx} onchange={handleConditionStepName}></lightning-input>
                                             </div>
                                         </template>
                                         <div class="slds-col slds-size_3-of-12">
-                                            <lightning-input
-                                                label="Field API Name"
-                                                value={cond.field}
-                                                data-idx={idx}
-                                                data-cond-idx={condIdx}
-                                                onchange={handleConditionField}>
-                                            </lightning-input>
+                                            <lightning-input label="Field API Name" value={cond.field} data-idx={idx} data-cond-idx={condIdx} onchange={handleConditionField}></lightning-input>
                                         </div>
                                         <div class="slds-col slds-size_2-of-12">
-                                            <lightning-combobox
-                                                label="Operator"
-                                                value={cond.operator}
-                                                options={conditionOperatorOptions}
-                                                data-idx={idx}
-                                                data-cond-idx={condIdx}
-                                                onchange={handleConditionOperator}>
-                                            </lightning-combobox>
+                                            <lightning-combobox label="Operator" value={cond.operator} options={conditionOperatorOptions} data-idx={idx} data-cond-idx={condIdx} onchange={handleConditionOperator}></lightning-combobox>
                                         </div>
                                         <template if:false={cond.isEmptyOperator}>
                                             <div class="slds-col slds-size_2-of-12">
-                                                <lightning-input
-                                                    label="Value"
-                                                    value={cond.value}
-                                                    data-idx={idx}
-                                                    data-cond-idx={condIdx}
-                                                    onchange={handleConditionValue}>
-                                                </lightning-input>
+                                                <lightning-input label="Value" value={cond.value} data-idx={idx} data-cond-idx={condIdx} onchange={handleConditionValue}></lightning-input>
                                             </div>
                                         </template>
                                         <div class="slds-col slds-size_1-of-12">
-                                            <lightning-button-icon
-                                                icon-name="utility:delete"
-                                                size="small"
-                                                data-idx={idx}
-                                                data-cond-idx={condIdx}
-                                                onclick={removeCondition}
-                                                alternative-text="Remove condition">
-                                            </lightning-button-icon>
+                                            <lightning-button-icon icon-name="utility:delete" size="small" data-idx={idx} data-cond-idx={condIdx} onclick={removeCondition} alternative-text="Remove condition"></lightning-button-icon>
                                         </div>
                                     </div>
                                 </template>
-                                <lightning-button
-                                    label="Add Condition"
-                                    icon-name="utility:add"
-                                    data-idx={idx}
-                                    onclick={addCondition}
-                                    class="slds-m-top_small">
-                                </lightning-button>
+                                <lightning-button label="Add Condition" icon-name="utility:add" data-idx={idx} onclick={addCondition} variant="neutral" size="small"></lightning-button>
                             </div>
                         </template>
                     </div>
                 </template>
-                <lightning-button label="Add Stage" onclick={addStage} icon-name="utility:add"></lightning-button>
+                <lightning-button label="Add Stage" onclick={addStage} icon-name="utility:add" variant="neutral"></lightning-button>
             </div>
         </template>
 
@@ -145,234 +136,149 @@
         <template if:true={isScreen3}>
             <div class="slds-m-around_medium">
                 <template for:each={stages} for:item="stage" for:index="stageIdx">
-                    <div key={stage.id} class="slds-section slds-is-open slds-m-bottom_medium">
-                        <h3 class="slds-section__title slds-theme_shade slds-p-around_x-small">{stage.name}</h3>
+                    <div key={stage.id} class="slds-m-bottom_large">
+                        <div class="slds-section__title slds-theme_shade slds-p-around_x-small slds-m-bottom_small" style="border-left: 3px solid #0176D3; border-radius: 2px;">
+                            <lightning-icon icon-name="utility:steps" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                            <strong>{stage.name}</strong>
+                        </div>
                         <template for:each={stage.steps} for:item="step" for:index="stepIdx">
-                            <div key={step.id} class="slds-box slds-m-vertical_small">
-                                <lightning-input label="Step Name" value={step.name} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepName}></lightning-input>
-                                <lightning-combobox label="Type" value={step.type} options={stepTypeOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepType}></lightning-combobox>
+                            <div key={step.id} class="slds-box slds-m-vertical_x-small slds-box_x-small" style="border-left: 2px solid #e4e4e4;">
+                                <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <lightning-input label="Step Name" value={step.name} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepName}></lightning-input>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <lightning-combobox label="Type" value={step.type} options={stepTypeOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleStepType}></lightning-combobox>
+                                    </div>
+                                </div>
+
+                                <!-- Create / Update Record config -->
                                 <template if:true={step.showObjectPicker}>
-                                    <lightning-input label="Target Object API Name (e.g. Case)" value={step.targetObject} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleTargetObject}></lightning-input>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <lightning-input label="Target Object API Name (e.g. Case)" value={step.targetObject} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleTargetObject}></lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-2 slds-align-bottom">
+                                            <lightning-button label="Load Fields" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={loadFields} variant="neutral"></lightning-button>
+                                        </div>
+                                    </div>
                                     <template if:true={step.hasFieldOptions}>
-                                        <p class="slds-text-title_caps slds-m-top_small">Select Fields to Expose</p>
-                                        <template for:each={step.fieldOptions} for:item="field">
-                                            <lightning-input key={field.apiName} type="checkbox" label={field.label} checked={field.required} data-field-api={field.apiName} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleFieldToggle}></lightning-input>
-                                        </template>
-                                    </template>
-                                    <lightning-button label="Load Fields" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={loadFields}></lightning-button>
-                                    <template if:true={step.hasRecordTypes}>
-                                        <lightning-combobox
-                                            label="Record Type"
-                                            value={step.recordTypeId}
-                                            options={step.recordTypeOptions}
-                                            placeholder="-- Default --"
-                                            data-stage-idx={stageIdx}
-                                            data-step-idx={stepIdx}
-                                            onchange={handleRecordType}>
-                                        </lightning-combobox>
-                                    </template>
-                                        <!-- Approval Panel -->
-                                        <div class="slds-m-top_small slds-box slds-box_x-small slds-theme_shade">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label="Requires Approval before advancing"
-                                                checked={step.requiresApproval}
-                                                data-stage-idx={stageIdx}
-                                                data-step-idx={stepIdx}
-                                                onchange={handleRequiresApproval}>
-                                            </lightning-input>
-                                            <template if:true={step.requiresApproval}>
-                                                <lightning-combobox
-                                                    label="Approval Process"
-                                                    value={step.approvalProcessName}
-                                                    options={approvalProcessOptions}
-                                                    placeholder="-- Select --"
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    onchange={handleApprovalProcess}
-                                                    class="slds-m-top_x-small">
-                                                </lightning-combobox>
-                                                <lightning-combobox
-                                                    label="On Rejection"
-                                                    value={step.onRejection}
-                                                    options={onRejectionOptions}
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    onchange={handleOnRejection}
-                                                    class="slds-m-top_x-small">
-                                                </lightning-combobox>
-                                                <template if:true={step.showRejectionStage}>
-                                                    <lightning-combobox
-                                                        label="Rejection Stage"
-                                                        value={step.rejectionStageId}
-                                                        options={stageOptions}
-                                                        placeholder="-- Select Stage --"
-                                                        data-stage-idx={stageIdx}
-                                                        data-step-idx={stepIdx}
-                                                        onchange={handleRejectionStage}
-                                                        class="slds-m-top_x-small">
-                                                    </lightning-combobox>
-                                                </template>
+                                        <p class="slds-text-title_caps slds-m-top_small slds-m-bottom_x-small">
+                                            <lightning-icon icon-name="utility:field" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                                            Select Fields to Expose
+                                        </p>
+                                        <div class="slds-grid slds-wrap slds-gutters_x-small">
+                                            <template for:each={step.fieldOptions} for:item="field">
+                                                <div key={field.apiName} class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3">
+                                                    <lightning-input type="checkbox" label={field.label} checked={field.required} data-field-api={field.apiName} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleFieldToggle}></lightning-input>
+                                                </div>
                                             </template>
                                         </div>
-                                </template>
-                                <template if:true={step.showNotificationConfig}>
-                                    <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate}></lightning-textarea>
-                                    <lightning-combobox
-                                        label="Channel"
-                                        value={step.notificationChannel}
-                                        options={notificationChannelOptions}
-                                        data-stage-idx={stageIdx}
-                                        data-step-idx={stepIdx}
-                                        onchange={handleNotificationChannel}
-                                        class="slds-m-top_x-small">
-                                    </lightning-combobox>
-                                    <template if:true={step.showEmailField}>
-                                        <lightning-input
-                                            type="email"
-                                            label="Recipient Email (leave blank to use current user)"
-                                            value={step.notificationEmail}
-                                            data-stage-idx={stageIdx}
-                                            data-step-idx={stepIdx}
-                                            onchange={handleNotificationEmail}
-                                            class="slds-m-top_x-small">
-                                        </lightning-input>
                                     </template>
+                                    <template if:true={step.hasRecordTypes}>
+                                        <lightning-combobox label="Record Type" value={step.recordTypeId} options={step.recordTypeOptions} placeholder="-- Default --" data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleRecordType} class="slds-m-top_x-small"></lightning-combobox>
+                                    </template>
+                                    <!-- Approval Panel -->
+                                    <div class="slds-m-top_small slds-box slds-box_x-small slds-theme_shade">
+                                        <lightning-input type="checkbox" label="Requires Approval before advancing" checked={step.requiresApproval} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleRequiresApproval}></lightning-input>
+                                        <template if:true={step.requiresApproval}>
+                                            <div class="slds-grid slds-gutters slds-m-top_x-small">
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <lightning-combobox label="Approval Process" value={step.approvalProcessName} options={approvalProcessOptions} placeholder="-- Select --" data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleApprovalProcess}></lightning-combobox>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-4">
+                                                    <lightning-combobox label="On Rejection" value={step.onRejection} options={onRejectionOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleOnRejection}></lightning-combobox>
+                                                </div>
+                                                <template if:true={step.showRejectionStage}>
+                                                    <div class="slds-col slds-size_1-of-4">
+                                                        <lightning-combobox label="Rejection Stage" value={step.rejectionStageId} options={stageOptions} placeholder="-- Select --" data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleRejectionStage}></lightning-combobox>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </template>
-                                <template if:true={step.showHttpConfig}>
-                                    <div class="slds-box slds-theme_shade slds-m-top_small">
-                                        <p class="slds-text-title_caps slds-m-bottom_small">HTTP Request Configuration</p>
 
+                                <!-- Notification config -->
+                                <template if:true={step.showNotificationConfig}>
+                                    <div class="slds-grid slds-gutters slds-m-top_x-small">
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <lightning-textarea label="Message Template" value={step.messageTemplate} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleMessageTemplate} rows="2"></lightning-textarea>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <lightning-combobox label="Channel" value={step.notificationChannel} options={notificationChannelOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleNotificationChannel}></lightning-combobox>
+                                            <template if:true={step.showEmailField}>
+                                                <lightning-input type="email" label="Recipient Email" value={step.notificationEmail} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleNotificationEmail} class="slds-m-top_x-small"></lightning-input>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- HTTP config -->
+                                <template if:true={step.showHttpConfig}>
+                                    <div class="slds-box slds-theme_shade slds-m-top_small slds-box_x-small">
+                                        <p class="slds-text-title_caps slds-m-bottom_small">
+                                            <lightning-icon icon-name="utility:connected_apps" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                                            HTTP Request
+                                        </p>
                                         <div class="slds-grid slds-gutters slds-m-bottom_x-small">
-                                            <div class="slds-col slds-size_1-of-2">
-                                                <lightning-combobox
-                                                    label="Named Credential"
-                                                    value={step.httpNamedCredential}
-                                                    options={namedCredentialOptions}
-                                                    placeholder="-- Select --"
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    data-field="httpNamedCredential"
-                                                    onchange={handleHttpField}>
-                                                </lightning-combobox>
+                                            <div class="slds-col slds-size_5-of-12">
+                                                <lightning-combobox label="Named Credential" value={step.httpNamedCredential} options={namedCredentialOptions} placeholder="-- Select --" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-field="httpNamedCredential" onchange={handleHttpField}></lightning-combobox>
                                             </div>
-                                            <div class="slds-col slds-size_1-of-4">
-                                                <lightning-combobox
-                                                    label="Method"
-                                                    value={step.httpMethod}
-                                                    options={httpMethodOptions}
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    data-field="httpMethod"
-                                                    onchange={handleHttpField}>
-                                                </lightning-combobox>
+                                            <div class="slds-col slds-size_2-of-12">
+                                                <lightning-combobox label="Method" value={step.httpMethod} options={httpMethodOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-field="httpMethod" onchange={handleHttpField}></lightning-combobox>
                                             </div>
-                                            <div class="slds-col slds-size_1-of-4">
-                                                <lightning-input
-                                                    label="Path"
-                                                    value={step.httpPath}
-                                                    placeholder="/v1/resource"
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    data-field="httpPath"
-                                                    onchange={handleHttpField}>
-                                                </lightning-input>
+                                            <div class="slds-col slds-size_5-of-12">
+                                                <lightning-input label="Path" value={step.httpPath} placeholder="/v1/resource" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-field="httpPath" onchange={handleHttpField}></lightning-input>
                                             </div>
                                         </div>
-
                                         <!-- Headers -->
-                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Headers</p>
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_xx-small">Headers</p>
                                         <template for:each={step.httpHeaders} for:item="hdr" for:index="hIdx">
                                             <div key={hdr.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="Key" value={hdr.key} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderKey}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="Value" value={hdr.value} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderValue}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_2-of-12">
-                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onclick={removeHttpHeader} alternative-text="Remove"></lightning-button-icon>
-                                                </div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="Key" value={hdr.key} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderKey}></lightning-input></div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="Value" value={hdr.value} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onchange={handleHttpHeaderValue}></lightning-input></div>
+                                                <div class="slds-col slds-size_2-of-12"><lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={hIdx} onclick={removeHttpHeader} alternative-text="Remove"></lightning-button-icon></div>
                                             </div>
                                         </template>
-                                        <lightning-button label="Add Header" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpHeader} class="slds-m-bottom_small"></lightning-button>
-
+                                        <lightning-button label="Add Header" icon-name="utility:add" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpHeader} class="slds-m-bottom_small"></lightning-button>
                                         <!-- Body Mappings -->
-                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Body Mappings (JSON Key → Process Field)</p>
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_xx-small">Body Mappings (JSON Key → Process Field)</p>
                                         <template for:each={step.httpBodyMappings} for:item="bm" for:index="bmIdx">
                                             <div key={bm.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="JSON Key" value={bm.jsonKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingKey}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="Process Field" value={bm.processField} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingField}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_2-of-12">
-                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onclick={removeHttpBodyMapping} alternative-text="Remove"></lightning-button-icon>
-                                                </div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="JSON Key" value={bm.jsonKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingKey}></lightning-input></div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="Process Field" value={bm.processField} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onchange={handleHttpBodyMappingField}></lightning-input></div>
+                                                <div class="slds-col slds-size_2-of-12"><lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={bmIdx} onclick={removeHttpBodyMapping} alternative-text="Remove"></lightning-button-icon></div>
                                             </div>
                                         </template>
-                                        <lightning-button label="Add Body Field" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpBodyMapping} class="slds-m-bottom_small"></lightning-button>
-
+                                        <lightning-button label="Add Body Field" icon-name="utility:add" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpBodyMapping} class="slds-m-bottom_small"></lightning-button>
                                         <!-- Response Mappings -->
-                                        <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Response Mappings (Response Path → Save as)</p>
+                                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_xx-small">Response Mappings (Response Path → Save as)</p>
                                         <template for:each={step.httpResponseMappings} for:item="rm" for:index="rmIdx">
                                             <div key={rm.id} class="slds-grid slds-gutters slds-m-bottom_xx-small">
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="Response Path" value={rm.jsonPath} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingPath}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_5-of-12">
-                                                    <lightning-input label="Save as" value={rm.fieldValuesKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingKey}></lightning-input>
-                                                </div>
-                                                <div class="slds-col slds-size_2-of-12">
-                                                    <lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onclick={removeHttpResponseMapping} alternative-text="Remove"></lightning-button-icon>
-                                                </div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="Response Path" value={rm.jsonPath} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingPath}></lightning-input></div>
+                                                <div class="slds-col slds-size_5-of-12"><lightning-input label="Save as" value={rm.fieldValuesKey} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onchange={handleHttpResponseMappingKey}></lightning-input></div>
+                                                <div class="slds-col slds-size_2-of-12"><lightning-button-icon icon-name="utility:delete" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-idx={rmIdx} onclick={removeHttpResponseMapping} alternative-text="Remove"></lightning-button-icon></div>
                                             </div>
                                         </template>
-                                        <lightning-button label="Add Response Mapping" icon-name="utility:add" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpResponseMapping} class="slds-m-bottom_small"></lightning-button>
-
-                                        <!-- Timeout, Retry, On Failure -->
+                                        <lightning-button label="Add Response Mapping" icon-name="utility:add" size="small" data-stage-idx={stageIdx} data-step-idx={stepIdx} onclick={addHttpResponseMapping} class="slds-m-bottom_small"></lightning-button>
+                                        <!-- Options row -->
                                         <div class="slds-grid slds-gutters slds-m-top_small">
                                             <div class="slds-col slds-size_2-of-12">
-                                                <lightning-input
-                                                    type="number"
-                                                    label="Timeout (s)"
-                                                    value={step.httpTimeout}
-                                                    min="1"
-                                                    max="120"
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    data-field="httpTimeout"
-                                                    onchange={handleHttpField}>
-                                                </lightning-input>
+                                                <lightning-input type="number" label="Timeout (s)" value={step.httpTimeout} min="1" max="120" data-stage-idx={stageIdx} data-step-idx={stepIdx} data-field="httpTimeout" onchange={handleHttpField}></lightning-input>
                                             </div>
-                                            <div class="slds-col slds-size_3-of-12">
-                                                <lightning-input
-                                                    type="checkbox"
-                                                    label="Retry (handled by middleware)"
-                                                    checked={step.httpRetry}
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    onchange={handleHttpRetry}>
-                                                </lightning-input>
+                                            <div class="slds-col slds-size_3-of-12" style="padding-top: 1.5rem;">
+                                                <lightning-input type="checkbox" label="Retry (middleware)" checked={step.httpRetry} data-stage-idx={stageIdx} data-step-idx={stepIdx} onchange={handleHttpRetry}></lightning-input>
                                             </div>
                                             <div class="slds-col slds-size_4-of-12">
-                                                <lightning-combobox
-                                                    label="On Failure"
-                                                    value={step.httpOnFailure}
-                                                    options={httpOnFailureOptions}
-                                                    data-stage-idx={stageIdx}
-                                                    data-step-idx={stepIdx}
-                                                    data-field="httpOnFailure"
-                                                    onchange={handleHttpField}>
-                                                </lightning-combobox>
+                                                <lightning-combobox label="On Failure" value={step.httpOnFailure} options={httpOnFailureOptions} data-stage-idx={stageIdx} data-step-idx={stepIdx} data-field="httpOnFailure" onchange={handleHttpField}></lightning-combobox>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
                         </template>
-                        <lightning-button label="Add Step" data-stage-idx={stageIdx} onclick={addStep} icon-name="utility:add"></lightning-button>
+                        <lightning-button label="Add Step" data-stage-idx={stageIdx} onclick={addStep} icon-name="utility:add" variant="neutral"></lightning-button>
                     </div>
                 </template>
             </div>
@@ -381,12 +287,22 @@
         <!-- Screen 4: Review -->
         <template if:true={isScreen4}>
             <div class="slds-m-around_medium">
-                <h2 class="slds-text-heading_medium">Review: {processName}</h2>
+                <div class="slds-box slds-theme_default slds-m-bottom_medium" style="border-left: 4px solid #0176D3;">
+                    <p class="slds-text-heading_small">{processName}</p>
+                    <p class="slds-text-body_small slds-text-color_weak">{processDescription}</p>
+                </div>
                 <template for:each={stages} for:item="stage">
-                    <div key={stage.id} class="slds-box slds-m-vertical_small">
-                        <p class="slds-text-title_caps">{stage.name}</p>
+                    <div key={stage.id} class="slds-m-bottom_small">
+                        <div class="slds-grid slds-grid_vertical-align-center slds-p-around_x-small slds-theme_shade" style="border-radius: 4px;">
+                            <lightning-icon icon-name="utility:steps" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                            <strong>{stage.name}</strong>
+                        </div>
                         <template for:each={stage.steps} for:item="step">
-                            <p key={step.id} class="slds-m-left_medium">— {step.name} ({step.type})</p>
+                            <div key={step.id} class="slds-grid slds-grid_vertical-align-center slds-p-around_x-small slds-m-left_medium">
+                                <lightning-icon icon-name="utility:right" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                                <span>{step.name}</span>
+                                <lightning-badge label={step.type} class="slds-m-left_x-small"></lightning-badge>
+                            </div>
                         </template>
                     </div>
                 </template>
@@ -394,13 +310,13 @@
         </template>
 
         <!-- Navigation Buttons -->
-        <div slot="footer" class="slds-m-around_small">
-            <lightning-button label="Back" onclick={goBack} disabled={isScreen1} class="slds-m-right_small"></lightning-button>
+        <div slot="footer" class="slds-grid slds-grid_align-spread slds-m-around_small">
+            <lightning-button label="Back" onclick={goBack} disabled={isScreen1}></lightning-button>
             <template if:false={isScreen4}>
-                <lightning-button variant="brand" label="Next" onclick={goNext}></lightning-button>
+                <lightning-button variant="brand" label="Next →" onclick={goNext}></lightning-button>
             </template>
             <template if:true={isScreen4}>
-                <lightning-button variant="brand" label="Save Process" onclick={saveProcess} disabled={isSaving}></lightning-button>
+                <lightning-button variant="brand" label="Save Process" onclick={saveProcess} disabled={isSaving} icon-name="utility:save"></lightning-button>
             </template>
         </div>
     </lightning-card>
