@@ -19,6 +19,7 @@
     <label>Process Flow</label>
     <navType>Console</navType>
     <tabs>standard-home</tabs>
+    <tabs>Process_Flow_Home</tabs>
     <tabs>Process__c</tabs>
     <tabs>Stage__c</tabs>
     <tabs>Step__c</tabs>
@@ -27,6 +28,9 @@
     <workspaceConfig>
         <mappings>
             <tab>Execution__c</tab>
+        </mappings>
+        <mappings>
+            <tab>Process_Flow_Home</tab>
         </mappings>
         <mappings>
             <tab>Process__c</tab>
