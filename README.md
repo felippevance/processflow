@@ -21,7 +21,7 @@ ProcessFlow solves this by separating **process design** (Admin) from **process 
 ## Features
 
 ### For Admins
-- **Visual Process Builder** — 4-screen wizard to create processes with stages, steps, fields, and record types
+- **Visual Process Creator** — 4-screen wizard to create processes with stages, steps, fields, and record types
 - **Dynamic Field Picker** — loads fields from any Salesforce object via metadata API; filters out system fields automatically
 - **Record Type Support** — select the record type for each Create/Update step
 - **Conditional Branching** — configure conditions on each stage so the Runner automatically skips stages whose conditions are not met, enabling dynamic process paths based on user input or records created during the process
@@ -169,7 +169,7 @@ sf org assign permset --name ProcessFlow_Admin --target-org my-org
 
 ### HTTP Request Step (Admin)
 
-1. In the **Process Builder**, add a step and select type `HTTP Request`
+1. In the **Process Creator**, add a step and select type `HTTP Request`
 2. Select a **Named Credential** (pre-configured in Salesforce Setup)
 3. Set the **Method** (GET, POST, PUT, PATCH, DELETE) and **Path** (e.g. `/v1/customers`)
 4. Add **Headers** if needed (e.g. `Content-Type: application/json`)
@@ -185,7 +185,7 @@ sf org assign permset --name ProcessFlow_Admin --target-org my-org
 
 Stages can be configured with conditions so the Runner skips them automatically when conditions are not met.
 
-1. In the **Process Builder**, go to Screen 2 (Stages)
+1. In the **Process Creator**, go to Screen 2 (Stages)
 2. Click the **filter icon** next to a stage name to open the conditions panel
 3. Set the **Condition Logic**: `AND` (all conditions must match) or `OR` (any condition matches)
 4. Add one or more conditions:
