@@ -18,7 +18,6 @@
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>Process Flow</label>
     <navType>Console</navType>
-    <tabs>standard-home</tabs>
     <tabs>Process_Flow_Home</tabs>
     <tabs>Process__c</tabs>
     <tabs>Stage__c</tabs>
@@ -40,9 +39,6 @@
         </mappings>
         <mappings>
             <tab>Step__c</tab>
-        </mappings>
-        <mappings>
-            <tab>standard-home</tab>
         </mappings>
     </workspaceConfig>
 </CustomApplication>
